@@ -78,6 +78,15 @@ export interface AdminMember {
   code_rotated_at: number | null;
 }
 
+export interface AdminPrincipal {
+  id: string;
+  access_issuer: string;
+  access_subject: string;
+  display_name: string;
+  status: string;
+  created_at: number;
+}
+
 export const LOCAL_ADMIN_COOKIE = '__Host-ccfv_admin';
 
 let remoteKeys: ReturnType<typeof createRemoteJWKSet> | null = null;
@@ -352,4 +361,33 @@ export async function createAdminMember(displayName: string): Promise<{ memberId
 
 export async function rotateAdminMemberCode(memberId: string): Promise<string> {
   return rotateMemberCode(memberId);
+}
+
+export async function listAdminPrincipals(): Promise<AdminPrincipal[]> {
+  const result = await sqlDb().prepare(`
+    SELECT id, access_issuer, access_subject, display_name, status, created_at
+    FROM admin_principals ORDER BY status ASC, display_name ASC LIMIT 100
+  `).all<AdminPrincipal>();
+  return result.results ?? [];
+}
+
+export async function createAdminPrincipal(input: { issuer: string; subject: string; displayName: string }): Promise<boolean> {
+  try {
+    const result = await sqlDb().prepare(`
+      INSERT INTO admin_principals (id, access_issuer, access_subject, display_name, status)
+      VALUES (?, ?, ?, ?, 'active')
+    `).bind(randomId(), input.issuer, input.subject, input.displayName).run();
+    return Number(result.meta?.changes ?? 0) === 1;
+  } catch {
+    return false;
+  }
+}
+
+export async function disableAdminPrincipal(principalId: string, currentAdminId: string): Promise<boolean> {
+  if (principalId === currentAdminId) return false;
+  const result = await sqlDb().prepare(`
+    UPDATE admin_principals SET status = 'disabled', updated_at = unixepoch()
+    WHERE id = ? AND status = 'active'
+  `).bind(principalId).run();
+  return Number(result.meta?.changes ?? 0) === 1;
 }

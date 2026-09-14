@@ -6,6 +6,7 @@ import { getMemberVote, getPublicVote, getRoundWithCandidates, getVoteCounts, is
 import { visitorIdentity } from '@/lib/antiabuse/visitor';
 import { issueCsrfToken } from '@/lib/security/csrf';
 import { isPublicVotingEnabled } from '@/lib/env';
+import { turnstileSiteKey } from '@/lib/antiabuse/turnstile';
 
 const slug = Astro.params.slug;
 if (!slug) return new Response('Not found', { status: 404 });
@@ -14,6 +15,7 @@ if (!data) return new Response('Not found', { status: 404 });
 const member = await currentMember(Astro.request);
 if (data.round.audience === 'members' && !member) return Astro.redirect('/miembros/ingresar?status=required');
 const publicEnabled = isPublicVotingEnabled() && data.round.audience === 'members_and_public';
+const turnstileKey = turnstileSiteKey();
 const visitor = data.round.audience === 'members_and_public' ? await visitorIdentity(Astro.request) : null;
 if (visitor?.setCookie) Astro.response.headers.append('Set-Cookie', visitor.setCookie);
 const voterKey = visitor ? await visitor.voterKeyForRound(data.round.id) : null;
@@ -42,9 +44,11 @@ const status = Astro.url.searchParams.get('status');
       <fieldset disabled={!open || (!member && !publicEnabled)}>
         <legend class="sr-only">Elige una película</legend>
         <div class="grid gap-5 md:grid-cols-2">{data.candidates.map((movie) => <label class="block cursor-pointer"><input class="peer sr-only" type="radio" name="movieId" value={movie.id} checked={selectedMovieId === movie.id} required /><div class="transition peer-checked:scale-[1.01] peer-focus-visible:ring-4 peer-focus-visible:ring-[var(--gold)]/40"><MovieCard movie={movie} selected={selectedMovieId === movie.id} count={showResults ? counts.get(movie.id) : undefined} disabled={!open} /></div></label>)}</div>
+        {publicEnabled && !member && turnstileKey && <div class="mt-6"><div class="cf-turnstile" data-sitekey={turnstileKey} data-action="public-vote"></div></div>}
         <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"><button class="focus-ring rounded-xl bg-[var(--green)] px-6 py-3.5 font-semibold text-white hover:bg-[#1e4633] disabled:cursor-not-allowed disabled:opacity-50" type="submit">{selectedMovieId ? 'Cambiar mi voto' : 'Votar por esta selección'}</button><span class="text-sm text-[var(--muted)]">{member ? 'Estás votando como miembro CCFV.' : publicEnabled ? 'Voto público: una participación por navegador y ronda.' : 'La votación pública aún no está habilitada.'}</span></div>
       </fieldset>
     </form>
     {showResults && <section class="mt-14 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6"><h2 class="text-lg font-bold text-[var(--green)]">Resultados publicados</h2><p class="mt-2 text-sm text-[var(--muted)]">Las señales se muestran por separado para que el equipo pueda interpretarlas.</p></section>}
   </section>
 </BaseLayout>
+{publicEnabled && !member && turnstileKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}

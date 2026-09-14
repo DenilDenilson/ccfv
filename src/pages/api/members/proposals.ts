@@ -14,8 +14,10 @@ export const POST: APIRoute = async ({ request }) => {
   if (!await verifyCsrfToken(request, String(body.get('csrf') || ''), 'member-proposal')) return errorJson(403, 'csrf', 'No se pudo validar el formulario.');
   const rawUrl = String(body.get('imdbUrl') || '').trim();
   const imdbId = parseImdbId(rawUrl);
+  const confirmedImdbId = parseImdbId(String(body.get('confirmedImdbId') || '').trim());
   const justification = String(body.get('justification') || '').trim().slice(0, 500) || null;
   if (!imdbId) return redirectTo('/miembros/proponer?status=invalid');
+  if (!confirmedImdbId || confirmedImdbId !== imdbId) return redirectTo('/miembros/proponer?status=confirm-required');
   const since = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
   if (await countMemberProposalsSince(member.id, since) >= 5) return redirectTo('/miembros/proponer?status=limit');
   try {

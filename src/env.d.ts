@@ -6,6 +6,7 @@ interface Env {
   PUBLIC_APP_ORIGIN: string;
   PUBLIC_TIME_ZONE: string;
   PUBLIC_VOTING_ENABLED: string;
+  PUBLIC_TURNSTILE_SITE_KEY?: string;
   TMDB_API_TOKEN?: string;
   TURNSTILE_SECRET_KEY?: string;
   MEMBER_CODE_HMAC_KEY?: string;

@@ -15,14 +15,51 @@ const status = Astro.url.searchParams.get('status');
     <p class="mt-4 max-w-2xl leading-7 text-[var(--muted)]">Pega un enlace de IMDb. Consultaremos TMDB para mostrarte la ficha y confirmar que es la película correcta antes de enviarla a revisión.</p>
     {status === 'duplicate' && <p class="mt-6 rounded-xl bg-[#fff8e8] px-4 py-3 text-sm text-[#805d1c]">Esa película ya tiene una propuesta registrada.</p>}
     {status === 'created' && <p class="mt-6 rounded-xl bg-[#e7f1e3] px-4 py-3 text-sm text-[var(--green)]">Tu propuesta quedó pendiente de revisión.</p>}
-    <form class="mt-8 space-y-6 rounded-3xl border border-[var(--line)] bg-[var(--paper)] p-6 shadow-sm sm:p-8" method="post" action="/api/members/proposals">
+    {status === 'confirm-required' && <p class="mt-6 rounded-xl bg-[#fff8e8] px-4 py-3 text-sm text-[#805d1c]">Primero consulta la ficha y confirma que sea la película correcta.</p>}
+    {status === 'invalid' && <p class="mt-6 rounded-xl bg-[#fff0ee] px-4 py-3 text-sm text-[#923d34]">El enlace de IMDb no es válido.</p>}
+    {status === 'not-found' && <p class="mt-6 rounded-xl bg-[#fff8e8] px-4 py-3 text-sm text-[#805d1c]">No encontramos esa película en TMDB.</p>}
+    <form id="proposal-form" class="mt-8 space-y-6 rounded-3xl border border-[var(--line)] bg-[var(--paper)] p-6 shadow-sm sm:p-8" method="post" action="/api/members/proposals">
       <input type="hidden" name="csrf" value={csrf} />
+      <input type="hidden" name="confirmedImdbId" id="confirmedImdbId" value="" />
       <label class="block text-sm font-semibold" for="imdbUrl">Enlace IMDb</label>
       <input class="focus-ring w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3" id="imdbUrl" name="imdbUrl" type="url" placeholder="https://www.imdb.com/title/tt0156887/" required />
       <label class="block text-sm font-semibold" for="justification">¿Por qué te gustaría verla? <span class="font-normal text-[var(--muted)]">(opcional)</span></label>
       <textarea class="focus-ring min-h-32 w-full resize-y rounded-xl border border-[var(--line)] bg-white px-4 py-3" id="justification" name="justification" maxlength="500" placeholder="Una breve razón para compartir con el equipo organizador."></textarea>
-      <button class="focus-ring rounded-xl bg-[var(--green)] px-5 py-3.5 font-semibold text-white hover:bg-[#1e4633]" type="submit">Buscar y enviar propuesta</button>
+      <button id="preview-button" class="focus-ring rounded-xl bg-[var(--green)] px-5 py-3.5 font-semibold text-white hover:bg-[#1e4633]" type="button">Consultar ficha</button>
+      <div id="preview" class="hidden rounded-2xl border border-[var(--line)] bg-white p-4" aria-live="polite"></div>
+      <button id="submit-button" class="hidden focus-ring rounded-xl bg-[var(--gold)] px-5 py-3.5 font-semibold text-white" type="submit">Confirmar y enviar propuesta</button>
       <p class="text-xs leading-5 text-[var(--muted)]">No usamos scraping de IMDb: solo extraemos el ID del enlace y consultamos la API de TMDB.</p>
     </form>
   </section>
 </BaseLayout>
+<script>
+  const form = document.querySelector<HTMLFormElement>('#proposal-form');
+  const previewButton = document.querySelector<HTMLButtonElement>('#preview-button');
+  const submitButton = document.querySelector<HTMLButtonElement>('#submit-button');
+  const preview = document.querySelector<HTMLElement>('#preview');
+  const confirmed = document.querySelector<HTMLInputElement>('#confirmedImdbId');
+  const imdbInput = document.querySelector<HTMLInputElement>('#imdbUrl');
+  if (form && previewButton && submitButton && preview && confirmed && imdbInput) {
+    previewButton.addEventListener('click', async () => {
+      preview.classList.remove('hidden');
+      preview.textContent = 'Consultando TMDB…';
+      submitButton.classList.add('hidden');
+      confirmed.value = '';
+      const response = await fetch('/api/members/proposals/preview', { method: 'POST', body: new FormData(form) });
+      const data = await response.json() as { preview?: { imdbId: string; title: string; originalTitle: string; releaseYear: number | null; overview: string | null; runtimeMinutes: number | null; directors: string[]; posterPath: string | null }; message?: string };
+      if (!response.ok || !data.preview) { preview.textContent = data.message || 'No se pudo obtener la ficha.'; return; }
+      const movie = data.preview;
+      preview.replaceChildren();
+      const heading = document.createElement('p'); heading.className = 'text-xs font-semibold uppercase tracking-[.14em] text-[var(--gold)]'; heading.textContent = 'Ficha encontrada'; preview.appendChild(heading);
+      if (movie.posterPath && /^\/[A-Za-z0-9._/-]+$/.test(movie.posterPath)) { const poster = document.createElement('img'); poster.className = 'mt-3 h-48 w-32 rounded-xl object-cover'; poster.src = `https://image.tmdb.org/t/p/w185${movie.posterPath}`; poster.alt = `Póster de ${movie.title}`; preview.appendChild(poster); }
+      const title = document.createElement('h2'); title.className = 'mt-2 text-xl font-bold text-[var(--green)]'; title.textContent = movie.title; preview.appendChild(title);
+      const metadata = document.createElement('p'); metadata.className = 'mt-1 text-sm text-[var(--muted)]'; metadata.textContent = `${movie.originalTitle}${movie.releaseYear ? ` · ${movie.releaseYear}` : ''}${movie.runtimeMinutes ? ` · ${movie.runtimeMinutes} min` : ''}`; preview.appendChild(metadata);
+      const overview = document.createElement('p'); overview.className = 'mt-3 text-sm leading-6 text-[var(--muted)]'; overview.textContent = movie.overview || 'Sin sinopsis disponible.'; preview.appendChild(overview);
+      const credits = document.createElement('p'); credits.className = 'mt-3 text-xs text-[var(--muted)]'; credits.textContent = `IMDb: ${movie.imdbId}${movie.directors.length ? ` · Director: ${movie.directors.join(', ')}` : ''}`; preview.appendChild(credits);
+      confirmed.value = movie.imdbId;
+      submitButton.classList.remove('hidden');
+    });
+    imdbInput.addEventListener('input', () => { confirmed.value = ''; submitButton.classList.add('hidden'); });
+    form.addEventListener('submit', (event) => { if (!confirmed.value) event.preventDefault(); });
+  }
+</script>

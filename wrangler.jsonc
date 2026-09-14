@@ -17,6 +17,7 @@
     "PUBLIC_APP_ORIGIN": "http://localhost:4321",
     "PUBLIC_TIME_ZONE": "America/Lima",
     "PUBLIC_VOTING_ENABLED": "false",
+    "PUBLIC_TURNSTILE_SITE_KEY": "",
     "CF_ACCESS_ISSUER": "",
     "CF_ACCESS_AUDIENCE": ""
   },
@@ -26,7 +27,8 @@
       "vars": {
         "APP_ENV": "staging",
         "PUBLIC_APP_ORIGIN": "https://staging.ccfv.example",
-        "PUBLIC_VOTING_ENABLED": "false"
+        "PUBLIC_VOTING_ENABLED": "false",
+        "PUBLIC_TURNSTILE_SITE_KEY": ""
       },
       "d1_databases": [
         {
@@ -42,8 +44,17 @@
       "vars": {
         "APP_ENV": "production",
         "PUBLIC_APP_ORIGIN": "https://ccfv.example",
-        "PUBLIC_VOTING_ENABLED": "true"
-      }
+        "PUBLIC_VOTING_ENABLED": "true",
+        "PUBLIC_TURNSTILE_SITE_KEY": ""
+      },
+      "d1_databases": [
+        {
+          "binding": "CCFV_DB",
+          "database_name": "ccfv-production",
+          "database_id": "replace-with-cloudflare-d1-id",
+          "migrations_dir": "drizzle/migrations"
+        }
+      ]
     }
   }
 }

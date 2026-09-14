@@ -1,6 +1,6 @@
 # Prueba E2E visible — 13 de septiembre de 2026 (Lima)
 
-Ejecutada manualmente mediante automatización del navegador integrado de Codex contra Astro en http://localhost:4321. No es una suite automatizada ni una auditoría de seguridad. Se usó D1 local y consultas reales a TMDB. Código probado: commit 58ba1c3.
+Ejecutada manualmente mediante automatización del navegador integrado de Codex contra Astro en http://localhost:4321. No es una suite automatizada ni una auditoría de seguridad. Se usó D1 local y consultas reales a TMDB.
 
 ## Recorrido verificado
 
@@ -16,19 +16,17 @@ Ejecutada manualmente mediante automatización del navegador integrado de Codex 
 10. Cerrar sesión admin y acceder a /admin: exige autenticación.
 11. Código de miembro inválido: mensaje de rechazo. Código válido posterior: permite ingresar.
 12. Volver a proponer Perfect Blue: muestra que ya existe una propuesta.
+13. Consultar nuevamente Perfect Blue desde el formulario: aparece la ficha de TMDB con póster, metadatos, sinopsis e IMDb ID; el envío queda bloqueado hasta confirmarla.
+14. El panel administrativo muestra la allowlist separada de administradores de Cloudflare Access y los estados operativos en español.
 
 ## Fallos y observaciones pendientes
 
-- Falta la vista previa y confirmación de película: el formulario la promete pero envía directamente a revisión. Incumple el flujo solicitado.
 - El panel muestra dos filas «Bianca»: el seed anterior se ejecutó antes y después de cambiar el secreto HMAC y creó dos identidades. No se borraron datos durante esta prueba.
-- Tras finalizar resultados sigue visible «Finalizar resultados»; después de seleccionar una película continúa el botón para seleccionar la otra. Deben reflejar mejor las transiciones permitidas.
-- Textos internos draft/published/closed/scheduled/screened/active aparecen en inglés.
-- La fecha de programación no tiene etiqueta accesible. Se pudo registrar una proyección antes de la fecha programada; conviene pedir fecha real explícita y confirmar si fue adelantada.
-- La tarjeta de ronda conserva el texto «Votación abierta» incluso después de cerrarla (observado al volver al área de miembros).
+- La base local conserva datos de prueba; deben recrearse o limpiarse antes de probar una migración de staging.
 
 ## Límites y datos conservados
 
-No se probaron rate limiting, Turnstile, concurrencia, regeneración/desactivación de códigos, todos los permisos de endpoints ni Cloudflare Access remoto. No afirmar que el MVP está listo para producción por este recorrido.
+No se probaron Turnstile con claves reales, concurrencia, límites con la cabecera `CF-Connecting-IP`, todos los permisos de endpoints ni Cloudflare Access remoto. No afirmar que el MVP está listo para producción por este recorrido hasta completar la configuración de Cloudflare.
 
 Los votos de ambos grupos se emitieron intencionalmente desde el mismo navegador, con logout intermedio, para recorrer las dos experiencias; esto no representa dos personas verificadas. No se probó la conversión inversa de público a miembro.
 

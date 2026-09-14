@@ -20,7 +20,7 @@ El panel administrativo ya permite revisar propuestas, crear rondas, añadir can
 1. Instala Node.js 22+ y pnpm 9+.
 2. Ejecuta `pnpm install`.
 3. Copia `.dev.vars.example` a `.dev.vars` y reemplaza los secretos. No subas `.dev.vars`.
-4. Configura un ID de D1 local en `wrangler.jsonc` o usa el entorno local con la configuración por defecto.
+4. Para el entorno local no necesitas un ID remoto: `wrangler d1 --local` crea la base SQLite dentro de `.wrangler/`. Los IDs de `wrangler.jsonc` solo se reemplazan al preparar staging o producción.
 5. Ejecuta `pnpm db:migrate:local`.
 6. Crea un miembro de prueba con `pnpm db:seed:local -- "Bianca" "CCFV-TESTLOCAL20260000000000000"`.
 7. Ejecuta `pnpm dev`.
@@ -40,3 +40,18 @@ pnpm db:migrate:local
 ```
 
 Antes de una migración de staging o producción, revisa los IDs de D1 y ejecuta el workflow de CI/CD con el entorno correspondiente. Consulta `plan.md` para el roadmap, las decisiones abiertas, las políticas de retención y los criterios de aceptación.
+
+## Staging y despliegue
+
+Staging es una copia aislada de la aplicación, con su propio Worker y su propia base D1. Sirve para probar migraciones, Cloudflare Access, Turnstile y los flujos administrativos sin tocar la votación pública. Producción es el entorno que usa el dominio real y los datos definitivos.
+
+Para preparar los recursos una sola vez:
+
+```text
+pnpm exec wrangler d1 create ccfv-staging
+pnpm exec wrangler d1 create ccfv-production
+```
+
+Copia cada `database_id` en el bloque correspondiente de `wrangler.jsonc` y cambia los dominios `PUBLIC_APP_ORIGIN`. Después configura en GitHub, dentro de los entornos `staging` y `production`, los secretos `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`, más la variable `TURNSTILE_SITE_KEY`.
+
+Los secretos del Worker se cargan una vez por entorno con `wrangler secret put`, por ejemplo `TMDB_API_TOKEN`, `TURNSTILE_SECRET_KEY`, `MEMBER_CODE_HMAC_KEY`, `VISITOR_COOKIE_HMAC_KEY`, `CSRF_HMAC_KEY`, `CF_ACCESS_ISSUER` y `CF_ACCESS_AUDIENCE`. Nunca se escriben en `wrangler.jsonc`, GitHub Actions logs ni el repositorio. El workflow manual `.github/workflows/deploy.yml` ejecuta los checks, aplica migraciones y despliega el entorno elegido.
