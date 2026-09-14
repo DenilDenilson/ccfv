@@ -8,9 +8,9 @@
     {
       "binding": "CCFV_DB",
       "database_name": "ccfv-production",
-      "database_id": "replace-with-cloudflare-d1-id",
-      "migrations_dir": "drizzle/migrations"
-    }
+      "database_id": "793129f3-26dc-4d4b-a929-43c79b1ae888",
+      "migrations_dir": "drizzle/migrations",
+    },
   ],
   "vars": {
     "APP_ENV": "local",
@@ -19,42 +19,42 @@
     "PUBLIC_VOTING_ENABLED": "false",
     "PUBLIC_TURNSTILE_SITE_KEY": "",
     "CF_ACCESS_ISSUER": "",
-    "CF_ACCESS_AUDIENCE": ""
+    "CF_ACCESS_AUDIENCE": "",
   },
   "env": {
     "staging": {
       "name": "ccfv-staging",
       "vars": {
         "APP_ENV": "staging",
-        "PUBLIC_APP_ORIGIN": "https://staging.ccfv.example",
+        "PUBLIC_APP_ORIGIN": "https://staging.ccfv.denil.org",
         "PUBLIC_VOTING_ENABLED": "false",
-        "PUBLIC_TURNSTILE_SITE_KEY": ""
+        "PUBLIC_TURNSTILE_SITE_KEY": "",
       },
       "d1_databases": [
         {
           "binding": "CCFV_DB",
           "database_name": "ccfv-staging",
-          "database_id": "replace-with-staging-d1-id",
-          "migrations_dir": "drizzle/migrations"
-        }
-      ]
+          "database_id": "fe7b4db0-3076-49b1-99b2-505e2ebf61c8",
+          "migrations_dir": "drizzle/migrations",
+        },
+      ],
     },
     "production": {
       "name": "ccfv-production",
       "vars": {
         "APP_ENV": "production",
-        "PUBLIC_APP_ORIGIN": "https://ccfv.example",
+        "PUBLIC_APP_ORIGIN": "https://ccfv.denil.org",
         "PUBLIC_VOTING_ENABLED": "true",
-        "PUBLIC_TURNSTILE_SITE_KEY": ""
+        "PUBLIC_TURNSTILE_SITE_KEY": "",
       },
       "d1_databases": [
         {
           "binding": "CCFV_DB",
           "database_name": "ccfv-production",
-          "database_id": "replace-with-cloudflare-d1-id",
-          "migrations_dir": "drizzle/migrations"
-        }
-      ]
-    }
-  }
+          "database_id": "793129f3-26dc-4d4b-a929-43c79b1ae888",
+          "migrations_dir": "drizzle/migrations",
+        },
+      ],
+    },
+  },
 }
