@@ -25,7 +25,10 @@ export async function verifyTurnstileToken(token: string, request: Request, expe
     const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form });
     if (!response.ok) return false;
     const result = await response.json() as SiteverifyResponse;
-    return result.success === true && (!result.action || result.action === expectedAction);
+    const expectedHostname = new URL(runtimeEnv().PUBLIC_APP_ORIGIN || request.url).hostname;
+    const actionValid = !result.action || result.action === expectedAction;
+    const hostnameValid = !result.hostname || result.hostname === expectedHostname;
+    return result.success === true && actionValid && hostnameValid;
   } catch {
     return false;
   }
