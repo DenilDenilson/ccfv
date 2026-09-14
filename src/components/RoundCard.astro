@@ -1,0 +1,20 @@
+---
+import type { RoundSummary } from '@/lib/types';
+
+interface Props { round: RoundSummary; hrefPrefix?: string; }
+const { round, hrefPrefix = '/rondas' } = Astro.props;
+const now = Math.floor(Date.now() / 1000);
+const isOpen = round.status === 'published' && round.startsAt <= now && now < round.endsAt;
+const date = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Lima' });
+---
+<a class="focus-ring group block rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--green)] hover:shadow-md" href={`${hrefPrefix}/${round.slug}`}>
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[.14em] text-[var(--gold)]">{round.audience === 'members_and_public' ? 'Votación abierta' : 'Solo miembros'}</p>
+      <h2 class="mt-2 text-xl font-bold text-[var(--green)] group-hover:underline">{round.title}</h2>
+    </div>
+    <span class={`rounded-full px-3 py-1 text-xs font-semibold ${isOpen ? 'bg-[#e7f1e3] text-[var(--green)]' : 'bg-[#f0eee8] text-[var(--muted)]'}`}>{isOpen ? 'Abierta' : round.status === 'closed' ? 'Cerrada' : 'Próximamente'}</span>
+  </div>
+  {round.description && <p class="mt-4 line-clamp-2 text-sm leading-6 text-[var(--muted)]">{round.description}</p>}
+  <p class="mt-5 text-xs text-[var(--muted)]">Cierra {date.format(new Date(round.endsAt * 1000))}</p>
+</a>

@@ -1,0 +1,28 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import RoundCard from '@/components/RoundCard.astro';
+import { listPublicRounds } from '@/lib/db/repositories';
+import type { RoundSummary } from '@/lib/types';
+
+let rounds: RoundSummary[] = [];
+let dataError = false;
+try {
+  rounds = await listPublicRounds();
+} catch {
+  dataError = true;
+}
+---
+<BaseLayout>
+  <section class="mx-auto max-w-6xl px-5 pb-12 pt-14 lg:px-8 lg:pt-24">
+    <div class="max-w-3xl">
+      <p class="text-sm font-semibold uppercase tracking-[.2em] text-[var(--gold)]">Cine Club Federico Villarreal</p>
+      <h1 class="mt-5 text-4xl font-black leading-[1.04] tracking-tight text-[var(--green)] sm:text-6xl">Elegimos juntos la próxima película.</h1>
+      <p class="mt-6 max-w-2xl text-lg leading-8 text-[var(--muted)]">Propuestas del CCFV, rondas de votación y una señal clara de lo que quiere ver nuestra comunidad.</p>
+    </div>
+    <div class="mt-14 flex items-end justify-between gap-4">
+      <div><p class="text-xs font-semibold uppercase tracking-[.16em] text-[var(--gold)]">Ahora</p><h2 class="mt-2 text-2xl font-bold text-[var(--ink)]">Rondas abiertas al público</h2></div>
+      <a class="focus-ring hidden rounded-lg px-3 py-2 text-sm font-semibold text-[var(--green)] hover:bg-[#e9efe6] sm:block" href="/miembros/ingresar">Proponer una película →</a>
+    </div>
+    {dataError ? <div class="mt-6 rounded-2xl border border-[#ead7a7] bg-[#fff8e8] p-5 text-sm text-[#805d1c]">La base de datos todavía no está conectada. Ejecuta las migraciones de D1 para publicar la primera ronda.</div> : rounds.length === 0 ? <div class="mt-6 rounded-2xl border border-dashed border-[var(--line)] bg-[var(--paper)] p-8 text-center text-[var(--muted)]">Aún no hay rondas públicas. Vuelve pronto.</div> : <div class="mt-6 grid gap-4 md:grid-cols-2">{rounds.map((round) => <RoundCard round={round} />)}</div>}
+  </section>
+</BaseLayout>
