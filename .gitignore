@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+.dev.vars
+.wrangler/
+.pnpm-store/
+worker-configuration.d.ts
+coverage/
+playwright-report/
+test-results/

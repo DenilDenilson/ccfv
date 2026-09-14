@@ -1,0 +1,6 @@
+TMDB_API_TOKEN=replace-with-tmdb-read-token
+MEMBER_CODE_HMAC_KEY=replace-with-a-long-random-secret
+VISITOR_COOKIE_HMAC_KEY=replace-with-a-long-random-secret
+CSRF_HMAC_KEY=replace-with-a-long-random-secret
+TURNSTILE_SECRET_KEY=replace-with-turnstile-secret
+LOCAL_ADMIN_SECRET=replace-with-local-only-admin-header-secret

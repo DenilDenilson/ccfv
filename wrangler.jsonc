@@ -1,0 +1,49 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ccfv",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "binding": "ASSETS", "directory": "./dist" },
+  "d1_databases": [
+    {
+      "binding": "CCFV_DB",
+      "database_name": "ccfv-production",
+      "database_id": "replace-with-cloudflare-d1-id",
+      "migrations_dir": "drizzle/migrations"
+    }
+  ],
+  "vars": {
+    "APP_ENV": "local",
+    "PUBLIC_APP_ORIGIN": "http://localhost:4321",
+    "PUBLIC_TIME_ZONE": "America/Lima",
+    "PUBLIC_VOTING_ENABLED": "false",
+    "CF_ACCESS_ISSUER": "",
+    "CF_ACCESS_AUDIENCE": ""
+  },
+  "env": {
+    "staging": {
+      "name": "ccfv-staging",
+      "vars": {
+        "APP_ENV": "staging",
+        "PUBLIC_APP_ORIGIN": "https://staging.ccfv.example",
+        "PUBLIC_VOTING_ENABLED": "false"
+      },
+      "d1_databases": [
+        {
+          "binding": "CCFV_DB",
+          "database_name": "ccfv-staging",
+          "database_id": "replace-with-staging-d1-id",
+          "migrations_dir": "drizzle/migrations"
+        }
+      ]
+    },
+    "production": {
+      "name": "ccfv-production",
+      "vars": {
+        "APP_ENV": "production",
+        "PUBLIC_APP_ORIGIN": "https://ccfv.example",
+        "PUBLIC_VOTING_ENABLED": "true"
+      }
+    }
+  }
+}
