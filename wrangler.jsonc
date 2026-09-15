@@ -30,8 +30,8 @@
         "PUBLIC_VOTING_ENABLED": "false",
         "PUBLIC_TURNSTILE_SITE_KEY": "",
         "PUBLIC_TIME_ZONE": "America/Lima",
-        "CF_ACCESS_ISSUER": "",
-        "CF_ACCESS_AUDIENCE": "",
+        "CF_ACCESS_ISSUER": "https://denildenilson.cloudflareaccess.com",
+        "CF_ACCESS_AUDIENCE": "03b95afabf87b36243d359571770ab5eced468b95b73321efecff21de4c0cefe",
       },
       "d1_databases": [
         {
