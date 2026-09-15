@@ -52,7 +52,7 @@ pnpm exec wrangler d1 create ccfv-staging
 pnpm exec wrangler d1 create ccfv-production
 ```
 
-Copia cada `database_id` en el bloque correspondiente de `wrangler.jsonc` y cambia los dominios `PUBLIC_APP_ORIGIN`. Después configura en GitHub, dentro de los entornos `staging` y `production`, los secretos `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`, más la variable `TURNSTILE_SITE_KEY`.
+Copia cada `database_id` en el bloque correspondiente de `wrangler.jsonc` y cambia los dominios `PUBLIC_APP_ORIGIN`. Después configura en GitHub, dentro de los entornos `staging` y `production`, los secretos `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`, más la variable `TURNSTILE_SITE_KEY`. Las migraciones remotas llevan explícitamente `--remote`; sin esa opción Wrangler puede trabajar sobre la D1 local de la máquina o del runner.
 
 Los secretos del Worker se cargan una vez por Worker con `wrangler secret put`. En el staging ya creado, usa el nombre real del Worker:
 

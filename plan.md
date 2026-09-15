@@ -616,7 +616,7 @@ Validar variables obligatorias y fallar de forma explícita si falta un secreto.
 1. Drizzle schema como descripción de tablas; Drizzle Kit genera SQL para revisión. Documentar SQL manual necesario para índices parciales o restricciones no expresadas por el generador.
 2. Un único ejecutor de migraciones: Wrangler D1. No alternar su historial con otro migrador que aplique dos veces los mismos archivos.
 3. Configurar una carpeta/patrón de migraciones que coincida con la salida de la versión de Drizzle fijada. Versionar SQL y metadatos; no editar migraciones ya aplicadas.
-4. Aplicar primero a D1 local vacía y una fixture de actualización; luego a staging; finalmente a producción con DB y entorno explícitos.
+4. Aplicar primero a D1 local vacía y una fixture de actualización; luego a staging; finalmente a producción con DB y entorno explícitos. En staging y producción usar siempre `--remote`; sin esa opción Wrangler puede aplicar la migración a la D1 local del runner y dejar intacta la base desplegada.
 5. Usar cambios compatibles hacia atrás: agregar estructura, desplegar código que la usa y eliminar lo antiguo en una entrega posterior si hace falta.
 6. Comprobar integridad referencial después de cambios. Diferir temporalmente claves en una migración no equivale a desactivarlas permanentemente.
 7. No usar `push` de esquema contra producción ni ejecutar migraciones automáticamente desde una petición web.
