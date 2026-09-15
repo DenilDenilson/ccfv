@@ -58,4 +58,4 @@ jobs:
           else
             WORKER_NAME="ccfv-production"
           fi
-          pnpm exec wrangler deploy --name "$WORKER_NAME" --var "PUBLIC_TURNSTILE_SITE_KEY:${TURNSTILE_SITE_KEY}"
+          pnpm exec wrangler deploy --env "${{ inputs.environment }}" --name "$WORKER_NAME" --var "PUBLIC_TURNSTILE_SITE_KEY:${TURNSTILE_SITE_KEY}"
