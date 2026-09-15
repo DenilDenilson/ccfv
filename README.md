@@ -54,4 +54,14 @@ pnpm exec wrangler d1 create ccfv-production
 
 Copia cada `database_id` en el bloque correspondiente de `wrangler.jsonc` y cambia los dominios `PUBLIC_APP_ORIGIN`. Después configura en GitHub, dentro de los entornos `staging` y `production`, los secretos `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`, más la variable `TURNSTILE_SITE_KEY`.
 
-Los secretos del Worker se cargan una vez por entorno con `wrangler secret put`, por ejemplo `TMDB_API_TOKEN`, `TURNSTILE_SECRET_KEY`, `MEMBER_CODE_HMAC_KEY`, `VISITOR_COOKIE_HMAC_KEY`, `CSRF_HMAC_KEY`, `CF_ACCESS_ISSUER` y `CF_ACCESS_AUDIENCE`. Nunca se escriben en `wrangler.jsonc`, GitHub Actions logs ni el repositorio. El workflow manual `.github/workflows/deploy.yml` compila con `CLOUDFLARE_ENV` para seleccionar el entorno de Astro 6, aplica migraciones con el `wrangler.jsonc` raíz y despliega el artefacto ya preparado. No añadas `--env` al comando final de deploy: en Astro 6 el entorno se decide en el build.
+Los secretos del Worker se cargan una vez por Worker con `wrangler secret put`. En el staging ya creado, usa el nombre real del Worker:
+
+```text
+pnpm exec wrangler secret put TMDB_API_TOKEN --name ccfv
+pnpm exec wrangler secret put TURNSTILE_SECRET_KEY --name ccfv
+pnpm exec wrangler secret put MEMBER_CODE_HMAC_KEY --name ccfv
+pnpm exec wrangler secret put VISITOR_COOKIE_HMAC_KEY --name ccfv
+pnpm exec wrangler secret put CSRF_HMAC_KEY --name ccfv
+```
+
+Para producción, repite los mismos secretos con `--name ccfv-production`. No uses `--env staging` al cargar estos secretos mientras el dominio siga conectado a `ccfv`: esa opción apunta al Worker lógico `ccfv-staging`. Nunca escribas secretos en `wrangler.jsonc`, GitHub Actions logs ni el repositorio. El workflow manual `.github/workflows/deploy.yml` compila con `CLOUDFLARE_ENV` para seleccionar el entorno de Astro 6, aplica migraciones con el `wrangler.jsonc` raíz y despliega el artefacto ya preparado. No añadas `--env` al comando final de deploy: en Astro 6 el entorno se decide en el build.
