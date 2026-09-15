@@ -29,6 +29,9 @@
         "PUBLIC_APP_ORIGIN": "https://staging.ccfv.denil.org",
         "PUBLIC_VOTING_ENABLED": "false",
         "PUBLIC_TURNSTILE_SITE_KEY": "",
+        "PUBLIC_TIME_ZONE": "America/Lima",
+        "CF_ACCESS_ISSUER": "",
+        "CF_ACCESS_AUDIENCE": "",
       },
       "d1_databases": [
         {
@@ -46,6 +49,9 @@
         "PUBLIC_APP_ORIGIN": "https://ccfv.denil.org",
         "PUBLIC_VOTING_ENABLED": "true",
         "PUBLIC_TURNSTILE_SITE_KEY": "",
+        "PUBLIC_TIME_ZONE": "America/Lima",
+        "CF_ACCESS_ISSUER": "",
+        "CF_ACCESS_AUDIENCE": "",
       },
       "d1_databases": [
         {

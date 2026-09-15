@@ -590,7 +590,7 @@ Probar Chromium móvil en CI y los flujos críticos en WebKit; realizar una revi
 | --- | --- | --- | --- |
 | Local | Astro con adaptador Cloudflare y runtime local | DB local, fixtures ficticias | Secretos locales ignorados por Git; claves Turnstile de prueba |
 | CI | Build y Worker local de pruebas | DB efímera y migrada | Mocks; ningún secreto de producción en PRs |
-| Staging | Worker independiente y hostname distinto | D1 exclusiva de staging | Access, políticas y claves de pruebas propias; participantes de prueba |
+| Staging | Worker `ccfv` existente y hostname `staging.ccfv.denil.org`; el build lógico usa `ccfv-staging` | D1 exclusiva de staging | Access, políticas y claves de pruebas propias; participantes de prueba |
 | Producción | Worker y dominio CCFV | D1 exclusiva de producción | Secrets propios; administración protegida; público según fase |
 
 Wrangler permite trabajar con recursos simulados localmente. No conectar accidentalmente desarrollo a una D1 remota: declarar explícitamente el entorno y comprobar el nombre de base antes de operaciones remotas. [Desarrollo local de Workers](https://developers.cloudflare.com/workers/local-development/) y [D1 local](https://developers.cloudflare.com/d1/best-practices/local-development/).
@@ -636,6 +636,8 @@ Flujo propuesto:
 5. Antes de migrar producción, identificar punto de restauración y comprobar compatibilidad. Aplicar migraciones, desplegar el mismo commit con configuración de producción y ejecutar smoke test sin modificar votos reales.
 6. Registrar SHA, fecha, versiones y estado de despliegue sin secretos. Si falla staging o una migración, no promover.
 7. Serializar promociones: no cancelar una migración en curso para lanzar otro despliegue. Fijar acciones externas a revisiones verificadas y permisos mínimos.
+
+Con Astro 6, `CLOUDFLARE_ENV` debe estar definido durante `astro build`; pasar solamente `wrangler deploy --env ...` después de un build genérico deja el artefacto con la configuración local. El workflow construye primero el entorno elegido, aplica las migraciones con el `wrangler.jsonc` raíz y luego despliega sin `--env`. Como el Worker de staging ya existe con el nombre `ccfv`, el job usa `--name ccfv` para ese destino; producción usa `--name ccfv-production`.
 
 No hace falta un backend hospedado en GitHub: GitHub guarda código y ejecuta CI; Cloudflare ejecuta la aplicación. No desplegar una API separada ni usar GitHub Pages para las rutas de servidor.
 

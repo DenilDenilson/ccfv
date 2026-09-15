@@ -37,7 +37,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Verify application
-        run: pnpm check && pnpm test && pnpm build
+        run: pnpm check && pnpm test
+      - name: Build Worker for selected environment
+        env:
+          CLOUDFLARE_ENV: ${{ inputs.environment }}
+        run: pnpm build
       - name: Apply D1 migrations
         shell: bash
         run: |
@@ -47,4 +51,11 @@ jobs:
             pnpm db:migrate:production
           fi
       - name: Deploy Worker
-        run: pnpm exec wrangler deploy --env "${{ inputs.environment }}" --var "PUBLIC_TURNSTILE_SITE_KEY:${TURNSTILE_SITE_KEY}"
+        shell: bash
+        run: |
+          if [ "${{ inputs.environment }}" = "staging" ]; then
+            WORKER_NAME="ccfv"
+          else
+            WORKER_NAME="ccfv-production"
+          fi
+          pnpm exec wrangler deploy --name "$WORKER_NAME" --var "PUBLIC_TURNSTILE_SITE_KEY:${TURNSTILE_SITE_KEY}"
