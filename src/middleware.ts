@@ -15,7 +15,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (accessIssuer) {
     try { connectSources.push(new URL(accessIssuer).origin); } catch { /* Ignore invalid optional issuer here; JWT validation handles it. */ }
   }
-  response.headers.set('Content-Security-Policy', `default-src 'self'; img-src 'self' https://image.tmdb.org data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src ${connectSources.join(' ')}`);
+  // Manual movie posters may be hosted by the club or another HTTPS image
+  // host. Keep scripts/connectivity restricted while allowing those images.
+  response.headers.set('Content-Security-Policy', `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src ${connectSources.join(' ')}`);
   if (context.request.method !== 'GET' || context.url.pathname.startsWith('/api/')) {
     response.headers.set('Cache-Control', 'no-store');
   }
