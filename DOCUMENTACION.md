@@ -143,16 +143,17 @@ sequenceDiagram
     D-->>W: Miembro encontrado
     W->>D: Guarda hash de la sesión
     W-->>B: Cookie __Host-ccfv_member
-    M->>B: Pega enlace de IMDb
+    M->>B: Ve una ronda en borrador y la selecciona
+    M->>B: Pega enlace de IMDb o elige registro manual
     B->>W: POST /api/members/proposals/preview
     W->>W: Extrae IMDb ID
     W->>T: Consulta TMDB por external_ids.imdb_id
     T-->>W: Metadatos y créditos
-    W-->>B: Ficha para confirmar
-    M->>B: Confirma y envía justificación
+    W-->>B: Ficha para confirmar o aviso de no encontrado
+    M->>B: Confirma la ficha o completa título manual
     B->>W: POST /api/members/proposals
-    W->>T: Revalida la ficha en servidor
-    W->>D: Guarda película y propuesta pendiente
+    W->>T: Revalida la ficha en servidor (modo IMDb)
+    W->>D: Guarda película y propuesta pendiente con round_id
     W-->>B: Propuesta pendiente de revisión
 ```
 
@@ -190,7 +191,7 @@ stateDiagram-v2
     candidate --> [*]: La ronda se publica o la candidata queda fuera
 ```
 
-Una película no entra automáticamente en una votación. La restricción `UNIQUE (movie_id)` en `proposals` bloquea propuestas duplicadas globales. Si ya existe una propuesta para la película, el miembro recibe un estado de duplicado.
+Una película no entra automáticamente en una votación. Cada propuesta nueva incluye `round_id`, por lo que el miembro la envía desde una ronda en borrador y el administrador decide si la propuesta aprobada se convierte en candidata. La restricción `UNIQUE (round_id, movie_id)` bloquea propuestas duplicadas dentro de una ronda. Las propuestas antiguas sin ronda se conservan como legado y solo el administrador puede ubicarlas manualmente.
 
 ### 4.5 Ciclo de una ronda y una función
 
@@ -218,7 +219,7 @@ stateDiagram-v2
 - El botón cambia de “Votar” a “Cambiar mi voto” cuando ya existe una elección.
 - Una ronda cerrada deshabilita el formulario y el servidor también rechaza cambios.
 - Los resultados muestran “Miembros” y “Público” como señales independientes.
-- El formulario de propuesta no permite enviar hasta confirmar la ficha obtenida desde TMDB.
+- El formulario de propuesta permite importar desde IMDb/TMDB y exige confirmar la ficha antes de enviar ese modo. Si TMDB no encuentra el título, el miembro puede cambiar a registro manual: el título es obligatorio y sinopsis, portada, año, duración y dirección son opcionales.
 - Los errores de servidor se convierten en mensajes comprensibles, pero las reglas importantes no dependen del navegador.
 - El panel concentra las operaciones en una sola vista y no intenta convertirse en un CMS.
 
@@ -288,6 +289,7 @@ erDiagram
     MEMBERS ||--o{ MEMBER_SESSIONS : tiene
     MEMBERS ||--o{ PROPOSALS : propone
     MOVIES ||--o| PROPOSALS : recibe
+    VOTING_ROUNDS ||--o{ PROPOSALS : recibe
     VOTING_ROUNDS ||--o{ ROUND_MOVIES : contiene
     MOVIES ||--o{ ROUND_MOVIES : participa
     MEMBERS ||--o{ MEMBER_VOTES : emite
@@ -325,6 +327,7 @@ erDiagram
         text id PK
         integer tmdb_id UK
         text imdb_id UK
+        text manual_key UK
         text title
         text original_title
         integer release_year
@@ -334,7 +337,8 @@ erDiagram
     }
     PROPOSALS {
         text id PK
-        text movie_id FK UK
+        text round_id FK
+        text movie_id FK
         text member_id FK
         text status
         text reviewed_by FK
@@ -395,8 +399,9 @@ erDiagram
 
 - `members.code_hash` es único: dos miembros no pueden compartir código.
 - `member_sessions.token_hash` es único: la base no guarda el token en texto plano.
-- `movies.tmdb_id` y `movies.imdb_id` son únicos: una película externa no se duplica.
-- `proposals.movie_id` es único: una película solo tiene una propuesta.
+- `movies.tmdb_id` y `movies.imdb_id` son únicos cuando existen; las películas manuales pueden tener ambos valores nulos.
+- `movies.manual_key` es único para manuales (título normalizado + año), evitando duplicados accidentales.
+- `proposals (round_id, movie_id)` es único: una película no se duplica dentro de una ronda. `round_id` es nullable únicamente para conservar propuestas antiguas.
 - `voting_rounds.slug` es único: cada URL de ronda es estable.
 - `round_movies (round_id, movie_id)` es clave primaria: una candidata no se agrega dos veces a una ronda.
 - `round_movies` tiene un índice único parcial por ronda para que solo haya una película seleccionada.
