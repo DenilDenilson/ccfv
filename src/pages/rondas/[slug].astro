@@ -21,7 +21,7 @@ const visitor = data.round.audience === 'members_and_public' ? await visitorIden
 if (visitor?.setCookie) Astro.response.headers.append('Set-Cookie', visitor.setCookie);
 const voterKey = visitor ? await visitor.voterKeyForRound(data.round.id) : null;
 const selectedMovieId = member ? await getMemberVote(data.round.id, member.id) : voterKey ? await getPublicVote(data.round.id, voterKey) : null;
-const showResults = Boolean(data.round.resultsPublishedAt);
+const showResults = data.round.status === 'published' || data.round.status === 'closed';
 const counts = showResults ? await getVoteCounts(data.round.id) : new Map();
 const csrf = await issueCsrfToken(`round-vote:${data.round.id}`);
 const now = Math.floor(Date.now() / 1000);
@@ -41,16 +41,17 @@ const status = Astro.url.searchParams.get('status');
     {status === 'saved' && <p class="mt-10 border-y border-[var(--ink)] px-1 py-4 text-sm font-medium text-[var(--ink)]">Tu elección quedó guardada. Puedes cambiarla mientras la ronda esté abierta.</p>}
     {status === 'closed' && <p class="mt-10 border-y border-[var(--line)] px-1 py-4 text-sm text-[var(--muted)]">La ronda ya está cerrada y no acepta cambios.</p>}
     {status === 'invalid' && <p class="mt-10 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">No pudimos guardar esa elección. Actualiza la página e inténtalo de nuevo.</p>}
+    {showResults && <div class="mt-10 border-y-4 border-[var(--orange)] bg-[var(--ink)] px-4 py-4 text-[var(--cream)]"><p class="text-xs font-bold uppercase tracking-[.12em] text-[var(--orange)]">Recuento {open ? 'en vivo' : 'final de la ronda'}</p><p class="mt-1 text-sm">Miembros CCFV y público se muestran por separado en cada película.</p></div>}
     <form class="mt-10" method="post" action={`/api/rounds/${data.round.id}/vote`}>
       <input type="hidden" name="csrf" value={csrf} />
       <fieldset disabled={!open || (!member && !publicEnabled)}>
         <legend class="sr-only">Elige una película</legend>
-        <div class="grid gap-5 md:grid-cols-2">{data.candidates.map((movie) => <label class="block cursor-pointer"><input class="peer sr-only" type="radio" name="movieId" value={movie.id} checked={selectedMovieId === movie.id} required /><div class="transition peer-checked:scale-[1.01] peer-focus-visible:ring-4 peer-focus-visible:ring-[var(--gold)]/40"><MovieCard movie={movie} selected={selectedMovieId === movie.id} count={showResults ? counts.get(movie.id) : undefined} disabled={!open} /></div></label>)}</div>
+        <div class="grid gap-5 md:grid-cols-2">{data.candidates.map((movie) => <label class="block cursor-pointer"><input class="peer sr-only" type="radio" name="movieId" value={movie.id} checked={selectedMovieId === movie.id} required /><div class="transition peer-checked:ring-4 peer-checked:ring-[var(--orange)] peer-checked:ring-offset-2 peer-checked:ring-offset-[var(--cream)] peer-focus-visible:ring-4 peer-focus-visible:ring-[var(--orange)]"><MovieCard movie={movie} selected={selectedMovieId === movie.id} count={showResults ? counts.get(movie.id) : undefined} disabled={!open} /></div></label>)}</div>
         {publicEnabled && !member && turnstileKey && <div class="mt-6"><div class="cf-turnstile" data-sitekey={turnstileKey} data-action="public-vote"></div></div>}
         <div class="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center"><button class="focus-ring editorial-action disabled:cursor-not-allowed disabled:opacity-40" type="submit">{selectedMovieId ? 'Cambiar mi voto' : 'Votar por esta selección'}</button><span class="text-sm text-[var(--muted)]">{data.round.status === 'draft' ? 'La votación se habilitará cuando el equipo abra la ronda.' : member ? 'Estás votando como miembro CCFV.' : publicEnabled ? 'Voto público: una participación por navegador y ronda.' : 'La votación pública aún no está habilitada.'}</span></div>
       </fieldset>
     </form>
-    {showResults && <section class="editorial-panel mt-16 border-x-0 border-b-0 p-6"><h2 class="text-2xl font-normal text-[var(--ink)]">Resultados publicados</h2><p class="mt-3 text-sm text-[var(--muted)]">Las señales se muestran por separado para que el equipo pueda interpretarlas.</p></section>}
+    {showResults && <section class="editorial-panel mt-16 border-x-0 border-b-0 p-6"><h2 class="text-2xl font-normal text-[var(--ink)]">{open ? 'Recuento en vivo' : 'Resultados de la ronda'}</h2><p class="mt-3 text-sm text-[var(--muted)]">Las señales se muestran por separado para que el equipo pueda interpretarlas. Actualiza la página para ver nuevos votos.</p></section>}
   </section>
 </BaseLayout>
 {publicEnabled && !member && turnstileKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}

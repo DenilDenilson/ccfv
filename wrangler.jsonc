@@ -27,7 +27,7 @@
       "vars": {
         "APP_ENV": "staging",
         "PUBLIC_APP_ORIGIN": "https://staging.ccfv.denil.org",
-        "PUBLIC_VOTING_ENABLED": "false",
+        "PUBLIC_VOTING_ENABLED": "true",
         "PUBLIC_TURNSTILE_SITE_KEY": "",
         "PUBLIC_TIME_ZONE": "America/Lima",
         "CF_ACCESS_ISSUER": "https://denildenilson.cloudflareaccess.com",

@@ -12,7 +12,7 @@ interface Props {
 const { movie, selected = false, count, disabled = false } = Astro.props;
 const poster = posterUrl(movie.posterPath);
 ---
-<article aria-disabled={disabled} class={`group editorial-panel overflow-hidden border-x-0 border-b-0 transition ${disabled ? 'opacity-60' : ''} ${selected ? 'border-[var(--ink)] bg-[var(--wash)]' : 'hover:border-[var(--ink)]'}`}>
+<article aria-disabled={disabled} aria-label={selected ? `${movie.title}, elección seleccionada` : movie.title} class={`group editorial-panel overflow-hidden border-x-0 border-b-0 transition ${disabled ? 'opacity-60' : ''} ${selected ? 'border-[var(--orange)] bg-[var(--cream)]' : 'hover:border-[var(--ink)]'}`}>
   <div class="grid grid-cols-[88px_1fr] gap-5 p-4 sm:grid-cols-[132px_1fr] sm:gap-6 sm:p-6">
     <div class="aspect-[2/3] overflow-hidden bg-[var(--wash)]">
       {poster ? <img class="h-full w-full object-cover" src={poster} alt={`Póster de ${movie.title}`} loading="lazy" /> : <div class="grid h-full place-items-center p-3 text-center text-xs text-[var(--muted)]">Póster no disponible</div>}
@@ -26,5 +26,5 @@ const poster = posterUrl(movie.posterPath);
       {count && <div class="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t border-[var(--line)] pt-3 text-xs uppercase tracking-[.06em] text-[var(--muted)]"><span>Miembros: <strong class="text-[var(--ink)]">{count.member}</strong></span><span>Público: <strong class="text-[var(--ink)]">{count.public}</strong></span></div>}
     </div>
   </div>
-  {selected && <div class="border-t border-[var(--ink)] px-4 py-2 text-xs font-bold uppercase tracking-[.08em] text-[var(--ink)]">Tu elección está guardada</div>}
+  {selected && <div class="border-t-4 border-[var(--orange)] bg-[var(--ink)] px-4 py-3 text-xs font-bold uppercase tracking-[.08em] text-[var(--cream)]">✓ Tu elección está seleccionada</div>}
 </article>

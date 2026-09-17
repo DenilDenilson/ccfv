@@ -879,9 +879,9 @@ El API token debe tener únicamente permisos necesarios para Workers, D1 y despl
 
 ### Resultados durante o después de votar
 
-- **Actual:** resultados ocultos hasta que el admin finaliza y publica.
-- **Alternativa:** mostrar un contador en vivo.
-- **Recomendación:** mantenerlos ocultos para evitar sesgo y presión social durante la ronda.
+- **Actual:** el recuento se muestra en vivo durante una ronda publicada y permanece visible cuando se cierra; miembros y público aparecen separados.
+- **Alternativa futura:** ocultar el recuento hasta el cierre si el CCFV considera que los números influyen demasiado en la elección.
+- **Recomendación actual:** mantener la transparencia del recuento y observar si genera sesgo antes de cambiar la política.
 
 ### Anonimato de propuestas
 
