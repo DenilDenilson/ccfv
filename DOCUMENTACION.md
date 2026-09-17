@@ -219,7 +219,7 @@ stateDiagram-v2
 - El botón cambia de “Votar” a “Cambiar mi voto” cuando ya existe una elección.
 - Una ronda cerrada deshabilita el formulario y el servidor también rechaza cambios.
 - Los resultados muestran “Miembros” y “Público” como señales independientes.
-- El formulario de propuesta permite importar desde IMDb/TMDB y exige confirmar la ficha antes de enviar ese modo. Si TMDB no encuentra el título, el miembro puede cambiar a registro manual: el título es obligatorio y sinopsis, portada, año, duración y dirección son opcionales.
+- El formulario de propuesta permite importar desde IMDb/TMDB y exige confirmar la ficha antes de enviar ese modo. Si TMDB no encuentra el título, el miembro puede cambiar a registro manual: título, sinopsis y portada HTTPS son obligatorios; año, duración y dirección son opcionales.
 - Los errores de servidor se convierten en mensajes comprensibles, pero las reglas importantes no dependen del navegador.
 - El panel concentra las operaciones en una sola vista y no intenta convertirse en un CMS.
 

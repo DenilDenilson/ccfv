@@ -61,6 +61,7 @@ export const POST: APIRoute = async ({ request }) => {
       const originalTitle = String(body.get('manualOriginalTitle') || '').trim().slice(0, 200) || null;
       const overview = String(body.get('manualOverview') || '').trim().slice(0, 4000) || null;
       const poster = parsePosterUrl(String(body.get('manualPosterUrl') || '').trim());
+      if (!overview || !poster) return redirectStatus('manual-invalid', roundId);
       const releaseYear = parseOptionalYear(String(body.get('manualReleaseYear') || '').trim());
       const runtimeMinutes = parseOptionalPositiveInt(String(body.get('manualRuntimeMinutes') || '').trim());
       const directors = String(body.get('manualDirectors') || '').split(',').map((value) => value.trim()).filter(Boolean).slice(0, 10);

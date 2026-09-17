@@ -24,7 +24,7 @@ const selectedRound = draftRounds.find((round) => round.id === requestedRound) |
     {status === 'invalid' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">El enlace de IMDb no es válido.</p>}
     {status === 'not-found' && <p class="mt-6 border-y border-[#b08a42] px-1 py-4 text-sm text-[#805d1c]">No encontramos esa película en TMDB. Puedes registrarla con los datos que tengas.</p>}
     {status === 'provider' && <p class="mt-6 border-y border-[#b08a42] px-1 py-4 text-sm text-[#805d1c]">TMDB no está disponible ahora. Puedes volver a intentarlo o registrarla manualmente.</p>}
-    {status === 'manual-invalid' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">Para un registro manual necesitas indicar al menos el título.</p>}
+    {status === 'manual-invalid' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">Para un registro manual necesitas indicar título, sinopsis y una portada HTTPS.</p>}
     {status === 'round-required' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">Selecciona una ronda antes de enviar la propuesta.</p>}
     {status === 'round-closed' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">Esta ronda ya no recibe propuestas.</p>}
     {status === 'limit' && <p class="mt-6 border-y border-[#b08a42] px-1 py-4 text-sm text-[#805d1c]">Alcanzaste el límite de cinco propuestas en 24 horas.</p>}
@@ -49,11 +49,11 @@ const selectedRound = draftRounds.find((round) => round.id === requestedRound) |
 
       <fieldset id="manual-fields" class="hidden space-y-5 border-t border-[var(--line)] pt-5">
         <legend class="text-sm font-semibold">Datos de la película</legend>
-        <p class="text-xs leading-5 text-[var(--muted)]">El título es el único dato obligatorio. Sinopsis y portada son opcionales, pero ayudan al equipo a evaluar la propuesta.</p>
+        <p class="text-xs leading-5 text-[var(--muted)]">Título, sinopsis y portada son los datos mínimos obligatorios. Año, duración y dirección son opcionales.</p>
         <label class="block text-sm font-semibold" for="manualTitle">Título <span class="text-[#923d34]">*</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualTitle" name="manualTitle" maxlength="200" placeholder="Título de la película" /></label>
         <label class="block text-sm font-semibold" for="manualOriginalTitle">Título original <span class="font-normal text-[var(--muted)]">(opcional)</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualOriginalTitle" name="manualOriginalTitle" maxlength="200" placeholder="Título en idioma original" /></label>
-        <label class="block text-sm font-semibold" for="manualOverview">Sinopsis <span class="font-normal text-[var(--muted)]">(opcional)</span><textarea class="focus-ring mt-2 min-h-28 w-full resize-y border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualOverview" name="manualOverview" maxlength="4000" placeholder="Una breve sinopsis"></textarea></label>
-        <label class="block text-sm font-semibold" for="manualPosterUrl">Portada (URL HTTPS, opcional)<input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualPosterUrl" name="manualPosterUrl" type="url" placeholder="https://…/poster.jpg" /></label>
+        <label class="block text-sm font-semibold" for="manualOverview">Sinopsis <span class="text-[#923d34]">*</span><textarea class="focus-ring mt-2 min-h-28 w-full resize-y border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualOverview" name="manualOverview" maxlength="4000" placeholder="Una breve sinopsis"></textarea></label>
+        <label class="block text-sm font-semibold" for="manualPosterUrl">Portada (URL HTTPS) <span class="text-[#923d34]">*</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualPosterUrl" name="manualPosterUrl" type="url" placeholder="https://…/poster.jpg" /></label>
         <div class="grid gap-5 sm:grid-cols-2"><label class="block text-sm font-semibold" for="manualReleaseYear">Año <span class="font-normal text-[var(--muted)]">(opcional)</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualReleaseYear" name="manualReleaseYear" type="number" min="1888" max="2100" /></label><label class="block text-sm font-semibold" for="manualRuntimeMinutes">Duración en minutos <span class="font-normal text-[var(--muted)]">(opcional)</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualRuntimeMinutes" name="manualRuntimeMinutes" type="number" min="1" max="1000" /></label></div>
         <label class="block text-sm font-semibold" for="manualDirectors">Dirección <span class="font-normal text-[var(--muted)]">(opcional, separa varios nombres con comas)</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualDirectors" name="manualDirectors" maxlength="500" /></label>
       </fieldset>
@@ -80,8 +80,10 @@ const selectedRound = draftRounds.find((round) => round.id === requestedRound) |
   const roundSelect = document.querySelector('#roundSelect') as HTMLSelectElement | null;
   const manualFields = document.querySelector<HTMLElement>('#manual-fields');
   const manualTitle = document.querySelector<HTMLInputElement>('#manualTitle');
+  const manualOverview = document.querySelector<HTMLTextAreaElement>('#manualOverview');
+  const manualPosterUrl = document.querySelector<HTMLInputElement>('#manualPosterUrl');
   const setMode = (value: 'tmdb' | 'manual') => {
-    if (!mode || !manualFields || !previewButton || !submitButton || !manualButton || !tmdbButton) return;
+    if (!mode || !manualFields || !previewButton || !submitButton || !manualButton || !tmdbButton || !manualOverview || !manualPosterUrl) return;
     mode.value = value;
     const manual = value === 'manual';
     manualFields.classList.toggle('hidden', !manual);
@@ -89,9 +91,11 @@ const selectedRound = draftRounds.find((round) => round.id === requestedRound) |
     submitButton.classList.toggle('hidden', !manual && !confirmed?.value);
     manualButton.classList.toggle('hidden', manual);
     tmdbButton.classList.toggle('hidden', !manual);
+    manualOverview.required = manual;
+    manualPosterUrl.required = manual;
     if (!manual && preview) preview.classList.add('hidden');
   };
-  if (form && previewButton && submitButton && preview && confirmed && imdbInput && roundId && roundSelect && manualFields && manualTitle && mode) {
+  if (form && previewButton && submitButton && preview && confirmed && imdbInput && roundId && roundSelect && manualFields && manualTitle && manualOverview && manualPosterUrl && mode) {
     roundSelect.addEventListener('change', () => { roundId.value = roundSelect.value; });
     manualButton?.addEventListener('click', () => { confirmed.value = ''; setMode('manual'); manualTitle.focus(); });
     tmdbButton?.addEventListener('click', () => { setMode('tmdb'); });
