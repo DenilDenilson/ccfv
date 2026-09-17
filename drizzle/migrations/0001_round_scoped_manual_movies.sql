@@ -1,7 +1,6 @@
 -- Proposals belong to the voting round where a member submitted them. Movies
 -- may also be entered manually when TMDB has no matching record.
 PRAGMA foreign_keys = OFF;
-BEGIN TRANSACTION;
 
 CREATE TABLE movies_new (
   id TEXT PRIMARY KEY NOT NULL,
@@ -67,5 +66,4 @@ CREATE INDEX proposals_status_created_idx ON proposals(status, created_at);
 CREATE INDEX proposals_member_created_idx ON proposals(member_id, created_at);
 CREATE INDEX proposals_round_status_idx ON proposals(round_id, status, created_at);
 
-COMMIT;
 PRAGMA foreign_keys = ON;
