@@ -153,8 +153,8 @@ sequenceDiagram
     M->>B: Confirma la ficha o completa título manual
     B->>W: POST /api/members/proposals
     W->>T: Revalida la ficha en servidor (modo IMDb)
-    W->>D: Guarda película y propuesta pendiente con round_id
-    W-->>B: Propuesta pendiente de revisión
+    W->>D: Guarda película y propuesta con round_id
+    W-->>B: Pendiente o aprobada automáticamente según la configuración de la ronda
 ```
 
 ### 4.3 Flujo administrativo
@@ -191,7 +191,7 @@ stateDiagram-v2
     candidate --> [*]: La ronda se publica o la candidata queda fuera
 ```
 
-Una película no entra automáticamente en una votación. Cada propuesta nueva incluye `round_id`, por lo que el miembro la envía desde una ronda en borrador y el administrador decide si la propuesta aprobada se convierte en candidata. La restricción `UNIQUE (round_id, movie_id)` bloquea propuestas duplicadas dentro de una ronda. Las propuestas antiguas sin ronda se conservan como legado y solo el administrador puede ubicarlas manualmente.
+Por defecto una película no entra automáticamente en una votación. Cada propuesta nueva incluye `round_id`, por lo que el miembro la envía desde una ronda en borrador y el administrador decide si la propuesta aprobada se convierte en candidata. Una ronda puede activar `auto_approve_proposals`; en ese caso la propuesta queda aprobada y se añade como candidata automáticamente hasta alcanzar 12 películas. La restricción `UNIQUE (round_id, movie_id)` bloquea propuestas duplicadas dentro de una ronda. Las propuestas antiguas sin ronda se conservan como legado y solo el administrador puede ubicarlas manualmente.
 
 ### 4.5 Ciclo de una ronda y una función
 
@@ -220,6 +220,7 @@ stateDiagram-v2
 - Una ronda cerrada deshabilita el formulario y el servidor también rechaza cambios.
 - Los resultados muestran “Miembros” y “Público” como señales independientes.
 - El formulario de propuesta permite importar desde IMDb/TMDB y exige confirmar la ficha antes de enviar ese modo. Si TMDB no encuentra el título, el miembro puede cambiar a registro manual: título, sinopsis y portada HTTPS son obligatorios; año, duración y dirección son opcionales.
+- El administrador puede editar una ronda ya creada (título, slug, descripción, audiencia, fechas y aprobación automática) y corregir la ficha, justificación o estado de propuestas desde el panel.
 - Los errores de servidor se convierten en mensajes comprensibles, pero las reglas importantes no dependen del navegador.
 - El panel concentra las operaciones en una sola vista y no intenta convertirse en un CMS.
 
@@ -554,7 +555,7 @@ El panel está en `/admin` y funciona como una consola operativa pequeña.
 ### Reglas de negocio del panel
 
 - Una ronda se publica solo con entre 2 y 12 candidatas.
-- Solo propuestas aprobadas pueden entrar a una ronda.
+- Solo propuestas aprobadas pueden entrar a una ronda; una ronda con aprobación automática las aprueba y añade en el mismo envío del miembro.
 - La selección se realiza después de finalizar resultados.
 - Solo una candidata puede quedar seleccionada por ronda.
 - Todas las acciones administrativas exigen sesión válida y CSRF con alcance específico.

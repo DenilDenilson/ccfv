@@ -143,6 +143,7 @@ export const votingRounds = sqliteTable(
     publicKeyVersion: integer('public_key_version').notNull().default(1),
     resultsFinalizedAt: integer('results_finalized_at'),
     resultsPublishedAt: integer('results_published_at'),
+    autoApproveProposals: integer('auto_approve_proposals').notNull().default(0),
     createdBy: text('created_by').notNull(),
     updatedBy: text('updated_by').notNull(),
     createdAt: integer('created_at').notNull().default(now()),

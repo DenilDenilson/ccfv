@@ -310,14 +310,27 @@ export async function countMemberProposalsSince(memberId: string, since: number)
   return Number(row?.count ?? 0);
 }
 
-export async function createProposal(roundId: string, memberId: string, movieId: string, justification: string | null): Promise<{ id: string; duplicate: boolean }> {
+export async function createProposal(roundId: string, memberId: string, movieId: string, justification: string | null): Promise<{ id: string; duplicate: boolean; autoApproved: boolean }> {
   const id = randomId();
   try {
-    await sqlDb().prepare('INSERT INTO proposals (id, round_id, movie_id, member_id, justification, status) VALUES (?, ?, ?, ?, ?, \'pending\')').bind(id, roundId, movieId, memberId, justification).run();
-    return { id, duplicate: false };
+    const round = await sqlDb().prepare('SELECT auto_approve_proposals, created_by FROM voting_rounds WHERE id = ? AND status = \'draft\' LIMIT 1').bind(roundId).first<{ auto_approve_proposals: number; created_by: string }>();
+    const autoApproved = Number(round?.auto_approve_proposals ?? 0) === 1;
+    if (autoApproved) {
+      const count = await sqlDb().prepare('SELECT COUNT(*) AS count FROM round_movies WHERE round_id = ?').bind(roundId).first<{ count: number }>();
+      if (Number(count?.count ?? 0) >= 12) throw new Error('round-full');
+      await sqlDb().batch([
+        sqlDb().prepare(`INSERT INTO proposals (id, round_id, movie_id, member_id, justification, status, reviewed_by, reviewed_at)
+          VALUES (?, ?, ?, ?, ?, 'approved', ?, unixepoch())`).bind(id, roundId, movieId, memberId, justification, round?.created_by ?? null),
+        sqlDb().prepare(`INSERT INTO round_movies (round_id, movie_id, added_by, position)
+          SELECT ?, ?, ?, COALESCE(MAX(position), 0) + 1 FROM round_movies WHERE round_id = ?`).bind(roundId, movieId, round?.created_by ?? '', roundId),
+      ]);
+    } else {
+      await sqlDb().prepare('INSERT INTO proposals (id, round_id, movie_id, member_id, justification, status) VALUES (?, ?, ?, ?, ?, \'pending\')').bind(id, roundId, movieId, memberId, justification).run();
+    }
+    return { id, duplicate: false, autoApproved };
   } catch (error) {
     const existing = await sqlDb().prepare('SELECT id FROM proposals WHERE round_id = ? AND movie_id = ? LIMIT 1').bind(roundId, movieId).first<{ id: string }>();
-    if (existing) return { id: existing.id, duplicate: true };
+    if (existing) return { id: existing.id, duplicate: true, autoApproved: false };
     throw error;
   }
 }

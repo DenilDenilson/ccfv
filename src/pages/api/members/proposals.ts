@@ -76,8 +76,9 @@ export const POST: APIRoute = async ({ request }) => {
       movie = await saveMovie(preview);
     }
     const result = await createProposal(roundId, member.id, movie.id, justification);
-    return redirectStatus(result.duplicate ? 'duplicate' : 'created', roundId);
-  } catch {
+    return redirectStatus(result.duplicate ? 'duplicate' : result.autoApproved ? 'created-auto' : 'created', roundId);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'round-full') return redirectStatus('round-full', roundId);
     return redirectStatus(mode === 'manual' ? 'manual-error' : 'provider', roundId);
   }
 };

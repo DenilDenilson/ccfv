@@ -29,13 +29,35 @@ export interface AdminRound {
   id: string;
   slug: string;
   title: string;
+  description: string;
   status: string;
   audience: string;
   starts_at: number;
   ends_at: number;
+  auto_approve_proposals: number;
   candidate_count: number;
   results_finalized_at: number | null;
   results_published_at: number | null;
+}
+
+export interface AdminProposal {
+  id: string;
+  round_id: string | null;
+  round_title: string | null;
+  movie_id: string;
+  justification: string | null;
+  created_at: number;
+  status: 'pending' | 'approved' | 'rejected';
+  title: string;
+  original_title: string;
+  release_year: number | null;
+  poster_path: string | null;
+  overview: string | null;
+  runtime_minutes: number | null;
+  directors_json: string | null;
+  imdb_id: string | null;
+  tmdb_id: number | null;
+  proposer: string;
 }
 
 export interface ApprovedProposal {
@@ -160,6 +182,19 @@ export async function listPendingProposals(): Promise<PendingProposal[]> {
   return result.results ?? [];
 }
 
+export async function listAdminProposals(): Promise<AdminProposal[]> {
+  const result = await sqlDb().prepare(`
+    SELECT p.id, p.round_id, r.title AS round_title, p.movie_id, p.justification, p.created_at, p.status,
+      m.title, m.original_title, m.release_year, m.poster_path, m.overview, m.runtime_minutes,
+      m.directors_json, m.imdb_id, m.tmdb_id, me.display_name AS proposer
+    FROM proposals p JOIN movies m ON m.id = p.movie_id JOIN members me ON me.id = p.member_id
+      LEFT JOIN voting_rounds r ON r.id = p.round_id
+    ORDER BY CASE p.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, p.created_at ASC
+    LIMIT 200
+  `).all<AdminProposal>();
+  return result.results ?? [];
+}
+
 export async function listApprovedProposals(): Promise<ApprovedProposal[]> {
   const result = await sqlDb().prepare(`
     SELECT p.id, p.movie_id, p.round_id, r.title AS round_title, m.title, m.release_year
@@ -177,22 +212,58 @@ export async function reviewProposal(proposalId: string, adminId: string, decisi
   return Number(result.meta?.changes ?? 0) === 1;
 }
 
-export async function createRound(adminId: string, input: { title: string; slug: string; description: string; startsAt: number; endsAt: number; audience: 'members' | 'members_and_public' }): Promise<string> {
+export async function createRound(adminId: string, input: { title: string; slug: string; description: string; startsAt: number; endsAt: number; audience: 'members' | 'members_and_public'; autoApproveProposals: boolean }): Promise<string> {
   const id = randomId();
   await sqlDb().prepare(`
-    INSERT INTO voting_rounds (id, slug, title, description, status, audience, starts_at, ends_at, created_by, updated_by)
-    VALUES (?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?)
-  `).bind(id, input.slug, input.title, input.description, input.audience, input.startsAt, input.endsAt, adminId, adminId).run();
+    INSERT INTO voting_rounds (id, slug, title, description, status, audience, starts_at, ends_at, auto_approve_proposals, created_by, updated_by)
+    VALUES (?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?)
+  `).bind(id, input.slug, input.title, input.description, input.audience, input.startsAt, input.endsAt, input.autoApproveProposals ? 1 : 0, adminId, adminId).run();
   return id;
 }
 
 export async function listAdminRounds(): Promise<AdminRound[]> {
   const result = await sqlDb().prepare(`
-    SELECT r.id, r.slug, r.title, r.status, r.audience, r.starts_at, r.ends_at, r.results_finalized_at, r.results_published_at, COUNT(rm.movie_id) AS candidate_count
+    SELECT r.id, r.slug, r.title, r.description, r.status, r.audience, r.starts_at, r.ends_at,
+      r.auto_approve_proposals, r.results_finalized_at, r.results_published_at, COUNT(rm.movie_id) AS candidate_count
     FROM voting_rounds r LEFT JOIN round_movies rm ON rm.round_id = r.id
     GROUP BY r.id ORDER BY r.starts_at DESC LIMIT 50
   `).all<AdminRound>();
   return result.results ?? [];
+}
+
+export async function updateRound(adminId: string, roundId: string, input: { title: string; slug: string; description: string; startsAt: number; endsAt: number; audience: 'members' | 'members_and_public'; autoApproveProposals: boolean }): Promise<boolean> {
+  const result = await sqlDb().prepare(`
+    UPDATE voting_rounds SET title = ?, slug = ?, description = ?, starts_at = ?, ends_at = ?,
+      audience = ?, auto_approve_proposals = ?, updated_by = ?, updated_at = unixepoch()
+    WHERE id = ? AND status <> 'cancelled'
+  `).bind(input.title, input.slug, input.description, input.startsAt, input.endsAt, input.audience, input.autoApproveProposals ? 1 : 0, adminId, roundId).run();
+  return Number(result.meta?.changes ?? 0) === 1;
+}
+
+export async function updateProposal(adminId: string, proposalId: string, input: {
+  title: string;
+  originalTitle: string;
+  overview: string | null;
+  posterPath: string | null;
+  releaseYear: number | null;
+  runtimeMinutes: number | null;
+  directors: string[];
+  justification: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+}): Promise<boolean> {
+  const proposal = await sqlDb().prepare('SELECT movie_id FROM proposals WHERE id = ? LIMIT 1').bind(proposalId).first<{ movie_id: string }>();
+  if (!proposal) return false;
+  const result = await sqlDb().prepare(`
+    UPDATE movies SET title = ?, original_title = ?, overview = ?, poster_path = ?, release_year = ?,
+      runtime_minutes = ?, directors_json = ?, updated_at = unixepoch()
+    WHERE id = ?
+  `).bind(input.title, input.originalTitle, input.overview, input.posterPath, input.releaseYear, input.runtimeMinutes, JSON.stringify(input.directors), proposal.movie_id).run();
+  if (Number(result.meta?.changes ?? 0) < 1) return false;
+  const reviewed = input.status === 'pending' ? 'reviewed_by = NULL, reviewed_at = NULL' : 'reviewed_by = ?, reviewed_at = unixepoch()';
+  const proposalResult = input.status === 'pending'
+    ? await sqlDb().prepare(`UPDATE proposals SET justification = ?, status = ?, ${reviewed}, review_reason = NULL, updated_at = unixepoch() WHERE id = ?`).bind(input.justification, input.status, proposalId).run()
+    : await sqlDb().prepare(`UPDATE proposals SET justification = ?, status = ?, ${reviewed}, review_reason = NULL, updated_at = unixepoch() WHERE id = ?`).bind(input.justification, input.status, adminId, proposalId).run();
+  return Number(proposalResult.meta?.changes ?? 0) === 1;
 }
 
 export async function listRoundResults(roundId: string): Promise<AdminRoundResult[]> {

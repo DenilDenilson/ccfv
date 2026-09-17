@@ -20,6 +20,7 @@ const selectedRound = draftRounds.find((round) => round.id === requestedRound) |
     <p class="mt-6 max-w-2xl text-xl leading-8 text-[var(--muted)]">Elige una ronda y envía una película para que el equipo la revise. Puedes importarla desde IMDb o registrarla manualmente si no aparece en TMDB.</p>
     {status === 'duplicate' && <p class="mt-6 border-y border-[var(--line)] px-1 py-4 text-sm text-[var(--muted)]">Esa película ya fue propuesta para esta ronda.</p>}
     {status === 'created' && <p class="mt-6 border-y border-[var(--ink)] px-1 py-4 text-sm font-medium text-[var(--ink)]">Tu propuesta quedó pendiente de revisión.</p>}
+    {status === 'created-auto' && <p class="mt-6 border-y border-[var(--orange)] px-1 py-4 text-sm font-medium text-[var(--ink)]">Tu propuesta fue aprobada y añadida automáticamente a la ronda.</p>}
     {status === 'confirm-required' && <p class="mt-6 border-y border-[#b08a42] px-1 py-4 text-sm text-[#805d1c]">Primero consulta la ficha y confirma que sea la película correcta.</p>}
     {status === 'invalid' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">El enlace de IMDb no es válido.</p>}
     {status === 'not-found' && <p class="mt-6 border-y border-[#b08a42] px-1 py-4 text-sm text-[#805d1c]">No encontramos esa película en TMDB. Puedes registrarla con los datos que tengas.</p>}
@@ -28,6 +29,7 @@ const selectedRound = draftRounds.find((round) => round.id === requestedRound) |
     {status === 'round-required' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">Selecciona una ronda antes de enviar la propuesta.</p>}
     {status === 'round-closed' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">Esta ronda ya no recibe propuestas.</p>}
     {status === 'limit' && <p class="mt-6 border-y border-[#b08a42] px-1 py-4 text-sm text-[#805d1c]">Alcanzaste el límite de cinco propuestas en 24 horas.</p>}
+    {status === 'round-full' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">Esta ronda ya tiene el máximo de 12 candidatas. El equipo debe abrir otra ronda o retirar una candidata.</p>}
 
     {draftRounds.length === 0 ? <div class="editorial-panel mt-12 border-x-0 border-b-0 p-8 text-[var(--muted)]">No hay rondas en borrador disponibles para proponer películas. Cuando el equipo cree una, aparecerá aquí.</div> : <form id="proposal-form" class="editorial-panel mt-12 space-y-6 border-x-0 border-b-0 p-6 sm:p-8" method="post" action="/api/members/proposals">
       <input type="hidden" name="csrf" value={csrf} />
