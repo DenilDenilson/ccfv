@@ -36,11 +36,13 @@ export interface MoviePreview {
 export function parseImdbId(input: string): string | null {
   try {
     const value = input.trim();
-    const direct = imdbIdSchema.safeParse(value);
+    const direct = imdbIdSchema.safeParse(value.toLowerCase());
     if (direct.success) return direct.data;
     const url = new URL(value);
     if (url.protocol !== 'https:' || !['imdb.com', 'www.imdb.com', 'm.imdb.com'].includes(url.hostname)) return null;
-    const match = url.pathname.match(/^\/title\/(tt\d{4,12})(?:[/?]|$)/i);
+    // IMDb serves localized URLs such as /es/title/... and /de/title/....
+    // Accept one locale segment while still requiring the canonical title path.
+    const match = url.pathname.match(/^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?title\/(tt\d{4,12})(?:[/?]|$)/i);
     if (!match) return null;
     const id = match[1].toLowerCase();
     return imdbIdSchema.safeParse(id).success ? id : null;

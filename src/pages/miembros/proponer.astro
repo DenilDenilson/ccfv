@@ -43,7 +43,7 @@ const selectedRound = draftRounds.find((round) => round.id === requestedRound) |
 
       <div id="tmdb-fields">
         <label class="block text-sm font-semibold" for="imdbUrl">Enlace IMDb <span class="font-normal text-[var(--muted)]">(opcional si registras manualmente)</span></label>
-        <input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3" id="imdbUrl" name="imdbUrl" type="url" placeholder="https://www.imdb.com/title/tt0156887/" />
+        <input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3" id="imdbUrl" name="imdbUrl" type="text" inputmode="url" placeholder="https://www.imdb.com/es/title/tt0156887/ o tt0156887" />
         <button id="preview-button" class="focus-ring editorial-action mt-4" type="button">Consultar ficha en TMDB</button>
       </div>
 

@@ -3,14 +3,16 @@
 :root {
   color-scheme: light;
   font-family: "Chivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --ink: #242321;
-  --muted: #71706e;
-  --cream: #fcfbf8;
-  --paper: #fcfbf8;
-  --green: #242321;
-  --gold: #71706e;
-  --line: #cfcfcf;
-  --wash: #f2f0eb;
+  --ink: #111111;
+  --muted: #4d4542;
+  --cream: #fff7e9;
+  --paper: #fffaf2;
+  --green: #111111;
+  --gold: #a94324;
+  --orange: #e6632f;
+  --burgundy: #7c1f3d;
+  --line: #c9a996;
+  --wash: #f3dfcf;
 }
 
 html { background: var(--cream); }
@@ -27,7 +29,7 @@ h1.font-black, h2.font-bold, h3.font-bold { font-weight: 400 !important; }
   background: var(--cream);
 }
 
-.focus-ring:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+.focus-ring:focus-visible { outline: 3px solid var(--orange); outline-offset: 4px; }
 
 /* The reference site uses the Archeo theme: warm paper, charcoal ink,
    thin rules, uppercase navigation and generous magazine-like spacing. */
@@ -42,7 +44,7 @@ h1.font-black, h2.font-bold, h3.font-bold { font-weight: 400 !important; }
 }
 
 .editorial-kicker {
-  color: var(--muted);
+  color: var(--burgundy);
   font-size: .75rem;
   font-weight: 700;
   letter-spacing: .16em;
@@ -71,8 +73,8 @@ h1.font-black, h2.font-bold, h3.font-bold { font-weight: 400 !important; }
   align-items: center;
   justify-content: center;
   border: 1px solid var(--ink);
-  background: var(--ink);
-  color: var(--cream);
+  background: var(--orange);
+  color: var(--ink);
   font-size: .8rem;
   font-weight: 700;
   letter-spacing: .08em;
@@ -81,7 +83,7 @@ h1.font-black, h2.font-bold, h3.font-bold { font-weight: 400 !important; }
   transition: background-color .2s ease, color .2s ease;
 }
 
-.editorial-action:hover { background: transparent; color: var(--ink); }
+.editorial-action:hover { background: var(--ink); color: var(--cream); }
 
 .editorial-link {
   text-decoration: underline;
@@ -89,7 +91,7 @@ h1.font-black, h2.font-bold, h3.font-bold { font-weight: 400 !important; }
   text-underline-offset: .25em;
 }
 
-.editorial-link:hover { color: var(--muted); }
+.editorial-link:hover { color: var(--burgundy); }
 
 /* Normalize the existing Tailwind utility vocabulary to the square,
    print-like language of the reference theme. */
