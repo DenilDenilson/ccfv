@@ -1,65 +1,131 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { currentMember } from '@/lib/auth/member';
+import { listMemberRounds } from '@/lib/db/repositories';
 import { issueCsrfToken } from '@/lib/security/csrf';
 
 const member = await currentMember(Astro.request);
 if (!member) return Astro.redirect('/miembros/ingresar?status=expired');
 const csrf = await issueCsrfToken('member-proposal');
 const status = Astro.url.searchParams.get('status');
+const requestedRound = Astro.url.searchParams.get('round');
+let draftRounds = [] as Awaited<ReturnType<typeof listMemberRounds>>;
+try { draftRounds = (await listMemberRounds()).filter((round) => round.status === 'draft'); } catch { draftRounds = []; }
+const selectedRound = draftRounds.find((round) => round.id === requestedRound) || (draftRounds.length === 1 ? draftRounds[0] : null);
 ---
 <BaseLayout title="Proponer una película · CCFV">
   <section class="editorial-container max-w-4xl py-16 lg:py-24">
     <a class="focus-ring editorial-link text-sm text-[var(--muted)]" href="/miembros">← Área de miembros</a>
     <h1 class="mt-7 text-4xl font-normal tracking-tight text-[var(--ink)] sm:text-5xl">Propón una película</h1>
-    <p class="mt-6 max-w-2xl text-xl leading-8 text-[var(--muted)]">Pega un enlace de IMDb. Consultaremos TMDB para mostrarte la ficha y confirmar que es la película correcta antes de enviarla a revisión.</p>
-    {status === 'duplicate' && <p class="mt-6 rounded-xl bg-[#fff8e8] px-4 py-3 text-sm text-[#805d1c]">Esa película ya tiene una propuesta registrada.</p>}
-    {status === 'created' && <p class="mt-6 rounded-xl bg-[#e7f1e3] px-4 py-3 text-sm text-[var(--green)]">Tu propuesta quedó pendiente de revisión.</p>}
-    {status === 'confirm-required' && <p class="mt-6 rounded-xl bg-[#fff8e8] px-4 py-3 text-sm text-[#805d1c]">Primero consulta la ficha y confirma que sea la película correcta.</p>}
-    {status === 'invalid' && <p class="mt-6 rounded-xl bg-[#fff0ee] px-4 py-3 text-sm text-[#923d34]">El enlace de IMDb no es válido.</p>}
-    {status === 'not-found' && <p class="mt-6 rounded-xl bg-[#fff8e8] px-4 py-3 text-sm text-[#805d1c]">No encontramos esa película en TMDB.</p>}
-    <form id="proposal-form" class="editorial-panel mt-12 space-y-6 border-x-0 border-b-0 p-6 sm:p-8" method="post" action="/api/members/proposals">
+    <p class="mt-6 max-w-2xl text-xl leading-8 text-[var(--muted)]">Elige una ronda y envía una película para que el equipo la revise. Puedes importarla desde IMDb o registrarla manualmente si no aparece en TMDB.</p>
+    {status === 'duplicate' && <p class="mt-6 border-y border-[var(--line)] px-1 py-4 text-sm text-[var(--muted)]">Esa película ya fue propuesta para esta ronda.</p>}
+    {status === 'created' && <p class="mt-6 border-y border-[var(--ink)] px-1 py-4 text-sm font-medium text-[var(--ink)]">Tu propuesta quedó pendiente de revisión.</p>}
+    {status === 'confirm-required' && <p class="mt-6 border-y border-[#b08a42] px-1 py-4 text-sm text-[#805d1c]">Primero consulta la ficha y confirma que sea la película correcta.</p>}
+    {status === 'invalid' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">El enlace de IMDb no es válido.</p>}
+    {status === 'not-found' && <p class="mt-6 border-y border-[#b08a42] px-1 py-4 text-sm text-[#805d1c]">No encontramos esa película en TMDB. Puedes registrarla con los datos que tengas.</p>}
+    {status === 'provider' && <p class="mt-6 border-y border-[#b08a42] px-1 py-4 text-sm text-[#805d1c]">TMDB no está disponible ahora. Puedes volver a intentarlo o registrarla manualmente.</p>}
+    {status === 'manual-invalid' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">Para un registro manual necesitas indicar al menos el título.</p>}
+    {status === 'round-required' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">Selecciona una ronda antes de enviar la propuesta.</p>}
+    {status === 'round-closed' && <p class="mt-6 border-y border-[#a66a62] px-1 py-4 text-sm text-[#923d34]">Esta ronda ya no recibe propuestas.</p>}
+    {status === 'limit' && <p class="mt-6 border-y border-[#b08a42] px-1 py-4 text-sm text-[#805d1c]">Alcanzaste el límite de cinco propuestas en 24 horas.</p>}
+
+    {draftRounds.length === 0 ? <div class="editorial-panel mt-12 border-x-0 border-b-0 p-8 text-[var(--muted)]">No hay rondas en borrador disponibles para proponer películas. Cuando el equipo cree una, aparecerá aquí.</div> : <form id="proposal-form" class="editorial-panel mt-12 space-y-6 border-x-0 border-b-0 p-6 sm:p-8" method="post" action="/api/members/proposals">
       <input type="hidden" name="csrf" value={csrf} />
+      <input type="hidden" name="roundId" id="roundId" value={selectedRound?.id || ''} />
       <input type="hidden" name="confirmedImdbId" id="confirmedImdbId" value="" />
-      <label class="block text-sm font-semibold" for="imdbUrl">Enlace IMDb</label>
-      <input class="focus-ring w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3" id="imdbUrl" name="imdbUrl" type="url" placeholder="https://www.imdb.com/title/tt0156887/" required />
+      <input type="hidden" name="submissionMode" id="submissionMode" value="tmdb" />
+      <label class="block text-sm font-semibold" for="roundSelect">Ronda</label>
+      <select class="focus-ring w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3" id="roundSelect" required>
+        <option value="">Selecciona la ronda</option>
+        {draftRounds.map((round) => <option value={round.id} selected={selectedRound?.id === round.id}>{round.title}</option>)}
+      </select>
+      <p class="-mt-3 text-xs leading-5 text-[var(--muted)]">Las propuestas se moderan antes de convertirse en candidatas de la ronda.</p>
+
+      <div id="tmdb-fields">
+        <label class="block text-sm font-semibold" for="imdbUrl">Enlace IMDb <span class="font-normal text-[var(--muted)]">(opcional si registras manualmente)</span></label>
+        <input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3" id="imdbUrl" name="imdbUrl" type="url" placeholder="https://www.imdb.com/title/tt0156887/" />
+        <button id="preview-button" class="focus-ring editorial-action mt-4" type="button">Consultar ficha en TMDB</button>
+      </div>
+
+      <fieldset id="manual-fields" class="hidden space-y-5 border-t border-[var(--line)] pt-5">
+        <legend class="text-sm font-semibold">Datos de la película</legend>
+        <p class="text-xs leading-5 text-[var(--muted)]">El título es el único dato obligatorio. Sinopsis y portada son opcionales, pero ayudan al equipo a evaluar la propuesta.</p>
+        <label class="block text-sm font-semibold" for="manualTitle">Título <span class="text-[#923d34]">*</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualTitle" name="manualTitle" maxlength="200" placeholder="Título de la película" /></label>
+        <label class="block text-sm font-semibold" for="manualOriginalTitle">Título original <span class="font-normal text-[var(--muted)]">(opcional)</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualOriginalTitle" name="manualOriginalTitle" maxlength="200" placeholder="Título en idioma original" /></label>
+        <label class="block text-sm font-semibold" for="manualOverview">Sinopsis <span class="font-normal text-[var(--muted)]">(opcional)</span><textarea class="focus-ring mt-2 min-h-28 w-full resize-y border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualOverview" name="manualOverview" maxlength="4000" placeholder="Una breve sinopsis"></textarea></label>
+        <label class="block text-sm font-semibold" for="manualPosterUrl">Portada (URL HTTPS, opcional)<input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualPosterUrl" name="manualPosterUrl" type="url" placeholder="https://…/poster.jpg" /></label>
+        <div class="grid gap-5 sm:grid-cols-2"><label class="block text-sm font-semibold" for="manualReleaseYear">Año <span class="font-normal text-[var(--muted)]">(opcional)</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualReleaseYear" name="manualReleaseYear" type="number" min="1888" max="2100" /></label><label class="block text-sm font-semibold" for="manualRuntimeMinutes">Duración en minutos <span class="font-normal text-[var(--muted)]">(opcional)</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualRuntimeMinutes" name="manualRuntimeMinutes" type="number" min="1" max="1000" /></label></div>
+        <label class="block text-sm font-semibold" for="manualDirectors">Dirección <span class="font-normal text-[var(--muted)]">(opcional, separa varios nombres con comas)</span><input class="focus-ring mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 font-normal" id="manualDirectors" name="manualDirectors" maxlength="500" /></label>
+      </fieldset>
+
       <label class="block text-sm font-semibold" for="justification">¿Por qué te gustaría verla? <span class="font-normal text-[var(--muted)]">(opcional)</span></label>
       <textarea class="focus-ring min-h-32 w-full resize-y border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3" id="justification" name="justification" maxlength="500" placeholder="Una breve razón para compartir con el equipo organizador."></textarea>
-      <button id="preview-button" class="focus-ring editorial-action" type="button">Consultar ficha</button>
       <div id="preview" class="editorial-panel hidden border-x-0 border-b-0 bg-white p-4" aria-live="polite"></div>
-      <button id="submit-button" class="hidden focus-ring editorial-action" type="submit">Confirmar y enviar propuesta</button>
+      <div class="flex flex-wrap items-center gap-3"><button id="submit-button" class="hidden focus-ring editorial-action" type="submit">Confirmar y enviar propuesta</button><button id="manual-button" class="focus-ring editorial-link text-sm text-[var(--muted)]" type="button">Registrar película manualmente</button><button id="tmdb-button" class="hidden focus-ring editorial-link text-sm text-[var(--muted)]" type="button">Volver a importar desde IMDb</button></div>
       <p class="text-xs leading-5 text-[var(--muted)]">No usamos scraping de IMDb: solo extraemos el ID del enlace y consultamos la API de TMDB.</p>
-    </form>
+    </form>}
   </section>
 </BaseLayout>
 <script>
   const form = document.querySelector<HTMLFormElement>('#proposal-form');
   const previewButton = document.querySelector<HTMLButtonElement>('#preview-button');
   const submitButton = document.querySelector<HTMLButtonElement>('#submit-button');
+  const manualButton = document.querySelector<HTMLButtonElement>('#manual-button');
+  const tmdbButton = document.querySelector<HTMLButtonElement>('#tmdb-button');
   const preview = document.querySelector<HTMLElement>('#preview');
   const confirmed = document.querySelector<HTMLInputElement>('#confirmedImdbId');
+  const mode = document.querySelector<HTMLInputElement>('#submissionMode');
   const imdbInput = document.querySelector<HTMLInputElement>('#imdbUrl');
-  if (form && previewButton && submitButton && preview && confirmed && imdbInput) {
+  const roundId = document.querySelector<HTMLInputElement>('#roundId');
+  const roundSelect = document.querySelector('#roundSelect') as HTMLSelectElement | null;
+  const manualFields = document.querySelector<HTMLElement>('#manual-fields');
+  const manualTitle = document.querySelector<HTMLInputElement>('#manualTitle');
+  const setMode = (value: 'tmdb' | 'manual') => {
+    if (!mode || !manualFields || !previewButton || !submitButton || !manualButton || !tmdbButton) return;
+    mode.value = value;
+    const manual = value === 'manual';
+    manualFields.classList.toggle('hidden', !manual);
+    previewButton.classList.toggle('hidden', manual);
+    submitButton.classList.toggle('hidden', !manual && !confirmed?.value);
+    manualButton.classList.toggle('hidden', manual);
+    tmdbButton.classList.toggle('hidden', !manual);
+    if (!manual && preview) preview.classList.add('hidden');
+  };
+  if (form && previewButton && submitButton && preview && confirmed && imdbInput && roundId && roundSelect && manualFields && manualTitle && mode) {
+    roundSelect.addEventListener('change', () => { roundId.value = roundSelect.value; });
+    manualButton?.addEventListener('click', () => { confirmed.value = ''; setMode('manual'); manualTitle.focus(); });
+    tmdbButton?.addEventListener('click', () => { setMode('tmdb'); });
     previewButton.addEventListener('click', async () => {
+      if (!roundId.value) { preview.classList.remove('hidden'); preview.textContent = 'Selecciona una ronda antes de consultar.'; return; }
+      if (!imdbInput.value.trim()) { preview.classList.remove('hidden'); preview.textContent = 'Pega un enlace de IMDb o usa el registro manual.'; return; }
+      setMode('tmdb');
       preview.classList.remove('hidden');
       preview.textContent = 'Consultando TMDB…';
       submitButton.classList.add('hidden');
       confirmed.value = '';
-      const response = await fetch('/api/members/proposals/preview', { method: 'POST', body: new FormData(form) });
-      const data = await response.json() as { preview?: { imdbId: string; title: string; originalTitle: string; releaseYear: number | null; overview: string | null; runtimeMinutes: number | null; directors: string[]; posterPath: string | null }; message?: string };
-      if (!response.ok || !data.preview) { preview.textContent = data.message || 'No se pudo obtener la ficha.'; return; }
-      const movie = data.preview;
-      preview.replaceChildren();
-      const heading = document.createElement('p'); heading.className = 'text-xs font-semibold uppercase tracking-[.14em] text-[var(--gold)]'; heading.textContent = 'Ficha encontrada'; preview.appendChild(heading);
-      if (movie.posterPath && /^\/[A-Za-z0-9._/-]+$/.test(movie.posterPath)) { const poster = document.createElement('img'); poster.className = 'mt-3 h-48 w-32 rounded-xl object-cover'; poster.src = `https://image.tmdb.org/t/p/w185${movie.posterPath}`; poster.alt = `Póster de ${movie.title}`; preview.appendChild(poster); }
-      const title = document.createElement('h2'); title.className = 'mt-2 text-xl font-bold text-[var(--green)]'; title.textContent = movie.title; preview.appendChild(title);
-      const metadata = document.createElement('p'); metadata.className = 'mt-1 text-sm text-[var(--muted)]'; metadata.textContent = `${movie.originalTitle}${movie.releaseYear ? ` · ${movie.releaseYear}` : ''}${movie.runtimeMinutes ? ` · ${movie.runtimeMinutes} min` : ''}`; preview.appendChild(metadata);
-      const overview = document.createElement('p'); overview.className = 'mt-3 text-sm leading-6 text-[var(--muted)]'; overview.textContent = movie.overview || 'Sin sinopsis disponible.'; preview.appendChild(overview);
-      const credits = document.createElement('p'); credits.className = 'mt-3 text-xs text-[var(--muted)]'; credits.textContent = `IMDb: ${movie.imdbId}${movie.directors.length ? ` · Director: ${movie.directors.join(', ')}` : ''}`; preview.appendChild(credits);
-      confirmed.value = movie.imdbId;
-      submitButton.classList.remove('hidden');
+      try {
+        const response = await fetch('/api/members/proposals/preview', { method: 'POST', body: new FormData(form) });
+        const data = await response.json() as { preview?: { imdbId: string; title: string; originalTitle: string; releaseYear: number | null; overview: string | null; runtimeMinutes: number | null; directors: string[]; posterPath: string | null }; message?: string; code?: string };
+        if (!response.ok || !data.preview) {
+          preview.textContent = data.message || 'No se pudo obtener la ficha.';
+          if (data.code === 'not_found' || data.code === 'provider_error') setMode('manual');
+          return;
+        }
+        const movie = data.preview;
+        preview.replaceChildren();
+        const heading = document.createElement('p'); heading.className = 'text-xs font-semibold uppercase tracking-[.14em] text-[var(--gold)]'; heading.textContent = 'Ficha encontrada'; preview.appendChild(heading);
+        if (movie.posterPath && (/^\/[A-Za-z0-9._/-]+$/.test(movie.posterPath) || /^https:\/\//i.test(movie.posterPath))) { const poster = document.createElement('img'); poster.className = 'mt-3 h-48 w-32 object-cover'; poster.src = /^https:\/\//i.test(movie.posterPath) ? movie.posterPath : `https://image.tmdb.org/t/p/w185${movie.posterPath}`; poster.alt = `Póster de ${movie.title}`; preview.appendChild(poster); }
+        const title = document.createElement('h2'); title.className = 'mt-2 text-xl font-bold text-[var(--ink)]'; title.textContent = movie.title; preview.appendChild(title);
+        const metadata = document.createElement('p'); metadata.className = 'mt-1 text-sm text-[var(--muted)]'; metadata.textContent = `${movie.originalTitle}${movie.releaseYear ? ` · ${movie.releaseYear}` : ''}${movie.runtimeMinutes ? ` · ${movie.runtimeMinutes} min` : ''}`; preview.appendChild(metadata);
+        const overview = document.createElement('p'); overview.className = 'mt-3 text-sm leading-6 text-[var(--muted)]'; overview.textContent = movie.overview || 'Sin sinopsis disponible.'; preview.appendChild(overview);
+        const credits = document.createElement('p'); credits.className = 'mt-3 text-xs text-[var(--muted)]'; credits.textContent = `IMDb: ${movie.imdbId}${movie.directors.length ? ` · Director: ${movie.directors.join(', ')}` : ''}`; preview.appendChild(credits);
+        confirmed.value = movie.imdbId;
+        submitButton.classList.remove('hidden');
+      } catch { preview.textContent = 'No se pudo consultar TMDB. Puedes registrarla manualmente.'; setMode('manual'); }
     });
-    imdbInput.addEventListener('input', () => { confirmed.value = ''; submitButton.classList.add('hidden'); });
-    form.addEventListener('submit', (event) => { if (!confirmed.value) event.preventDefault(); });
+    imdbInput.addEventListener('input', () => { confirmed.value = ''; if (mode.value === 'tmdb') submitButton.classList.add('hidden'); });
+    form.addEventListener('submit', (event) => {
+      if (!roundId.value || (mode.value === 'tmdb' && !confirmed.value) || (mode.value === 'manual' && manualTitle.value.trim().length < 2)) event.preventDefault();
+    });
   }
 </script>

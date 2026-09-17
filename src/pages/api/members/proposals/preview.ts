@@ -3,6 +3,7 @@ import { currentMember } from '@/lib/auth/member';
 import { errorJson, formBody, json } from '@/lib/http';
 import { verifyCsrfToken } from '@/lib/security/csrf';
 import { fetchMoviePreview, parseImdbId } from '@/lib/tmdb';
+import { getRoundById } from '@/lib/db/repositories';
 import { consumeIpRateLimit } from '@/lib/antiabuse/rate-limit';
 
 export const prerender = false;
@@ -12,6 +13,9 @@ export const POST: APIRoute = async ({ request }) => {
   if (!await consumeIpRateLimit(request, { bucket: 'tmdb-preview', limit: 12, periodSeconds: 60 })) return errorJson(429, 'rate_limited', 'Demasiadas consultas. Espera un minuto e inténtalo nuevamente.');
   const body = await formBody(request);
   if (!await verifyCsrfToken(request, String(body.get('csrf') || ''), 'member-proposal')) return errorJson(403, 'csrf', 'No se pudo validar el formulario.');
+  const roundId = String(body.get('roundId') || '').trim();
+  const round = roundId ? await getRoundById(roundId) : null;
+  if (!round || round.status !== 'draft') return errorJson(422, 'round_closed', 'Selecciona una ronda que todavía esté recibiendo propuestas.');
   const imdbId = parseImdbId(String(body.get('imdbUrl') || '').trim());
   if (!imdbId) return errorJson(422, 'invalid_imdb', 'Pega un enlace válido de IMDb.');
   try {

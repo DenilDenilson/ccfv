@@ -14,6 +14,8 @@ export interface AdminIdentity {
 
 export interface PendingProposal {
   id: string;
+  round_id: string | null;
+  round_title: string | null;
   movie_id: string;
   justification: string | null;
   created_at: number;
@@ -41,6 +43,8 @@ export interface ApprovedProposal {
   movie_id: string;
   title: string;
   release_year: number | null;
+  round_id: string | null;
+  round_title: string | null;
 }
 
 export interface AdminCandidate {
@@ -149,8 +153,8 @@ export async function currentAdmin(request: Request): Promise<AdminIdentity | nu
 
 export async function listPendingProposals(): Promise<PendingProposal[]> {
   const result = await sqlDb().prepare(`
-    SELECT p.id, p.movie_id, p.justification, p.created_at, m.title, m.original_title, m.release_year, me.display_name AS proposer
-    FROM proposals p JOIN movies m ON m.id = p.movie_id JOIN members me ON me.id = p.member_id
+    SELECT p.id, p.round_id, r.title AS round_title, p.movie_id, p.justification, p.created_at, m.title, m.original_title, m.release_year, me.display_name AS proposer
+    FROM proposals p JOIN movies m ON m.id = p.movie_id JOIN members me ON me.id = p.member_id LEFT JOIN voting_rounds r ON r.id = p.round_id
     WHERE p.status = 'pending' ORDER BY p.created_at ASC LIMIT 100
   `).all<PendingProposal>();
   return result.results ?? [];
@@ -158,8 +162,8 @@ export async function listPendingProposals(): Promise<PendingProposal[]> {
 
 export async function listApprovedProposals(): Promise<ApprovedProposal[]> {
   const result = await sqlDb().prepare(`
-    SELECT p.id, p.movie_id, m.title, m.release_year
-    FROM proposals p JOIN movies m ON m.id = p.movie_id
+    SELECT p.id, p.movie_id, p.round_id, r.title AS round_title, m.title, m.release_year
+    FROM proposals p JOIN movies m ON m.id = p.movie_id LEFT JOIN voting_rounds r ON r.id = p.round_id
     WHERE p.status = 'approved' ORDER BY m.title ASC LIMIT 100
   `).all<ApprovedProposal>();
   return result.results ?? [];
@@ -212,9 +216,9 @@ export async function listRoundCandidates(roundId: string): Promise<AdminCandida
 export async function addApprovedMovieToRound(roundId: string, movieId: string, adminId: string, position: number): Promise<boolean> {
   const result = await sqlDb().prepare(`
     INSERT INTO round_movies (round_id, movie_id, added_by, position)
-    SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM proposals WHERE movie_id = ? AND status = 'approved')
+    SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM proposals WHERE movie_id = ? AND status = 'approved' AND (round_id = ? OR round_id IS NULL))
     ON CONFLICT(round_id, movie_id) DO NOTHING
-  `).bind(roundId, movieId, adminId, position, movieId).run();
+  `).bind(roundId, movieId, adminId, position, movieId, roundId).run();
   return Number(result.meta?.changes ?? 0) === 1;
 }
 
@@ -223,7 +227,7 @@ export async function addApprovedProposalToRound(roundId: string, proposalId: st
     INSERT INTO round_movies (round_id, movie_id, added_by, position)
     SELECT ?, p.movie_id, ?, ? FROM proposals p
     JOIN voting_rounds r ON r.id = ?
-    WHERE p.id = ? AND p.status = 'approved' AND r.status = 'draft'
+    WHERE p.id = ? AND p.status = 'approved' AND (p.round_id = r.id OR p.round_id IS NULL) AND r.status = 'draft'
     ON CONFLICT(round_id, movie_id) DO NOTHING
   `).bind(roundId, adminId, position, roundId, proposalId).run();
   return Number(result.meta?.changes ?? 0) === 1;
