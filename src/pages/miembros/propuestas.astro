@@ -8,10 +8,10 @@ if (!member) return Astro.redirect('/miembros/ingresar?status=expired');
 const proposals = await listMemberProposals(member.id);
 ---
 <BaseLayout title="Mis propuestas · CCFV">
-  <section class="mx-auto max-w-4xl px-5 py-14 lg:px-8 lg:py-20">
-    <a class="focus-ring text-sm text-[var(--muted)] underline underline-offset-4" href="/miembros">← Área de miembros</a>
-    <h1 class="mt-6 text-4xl font-black text-[var(--green)]">Mis propuestas</h1>
-    <div class="mt-8 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--paper)]">
+  <section class="editorial-container max-w-4xl py-16 lg:py-24">
+    <a class="focus-ring editorial-link text-sm text-[var(--muted)]" href="/miembros">← Área de miembros</a>
+    <h1 class="mt-7 text-4xl font-normal tracking-tight text-[var(--ink)] sm:text-5xl">Mis propuestas</h1>
+    <div class="editorial-panel mt-12 overflow-hidden border-x-0 border-b-0">
       {proposals.length === 0 ? <p class="p-7 text-[var(--muted)]">Todavía no has propuesto una película.</p> : <div class="divide-y divide-[var(--line)]">{proposals.map((proposal) => <div class="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 class="font-semibold text-[var(--ink)]">{proposal.title}</h2>{proposal.justification && <p class="mt-1 text-sm text-[var(--muted)]">{proposal.justification}</p>}</div><span class="w-fit rounded-full bg-[#f0eee8] px-3 py-1 text-xs font-semibold capitalize text-[var(--muted)]">{proposal.status === 'pending' ? 'Pendiente' : proposal.status === 'approved' ? 'Aprobada' : 'Rechazada'}</span></div>)}</div>}
     </div>
   </section>

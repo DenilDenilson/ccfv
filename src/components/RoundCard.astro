@@ -9,14 +9,14 @@ const date = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 
 const audienceLabel = round.audience === 'members_and_public' ? 'Miembros y público' : 'Solo miembros';
 const statusLabel = isOpen ? 'Abierta' : round.status === 'closed' ? 'Cerrada' : round.status === 'published' ? 'Próximamente' : round.status === 'cancelled' ? 'Cancelada' : 'Borrador';
 ---
-<a class="focus-ring group block rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--green)] hover:shadow-md" href={`${hrefPrefix}/${round.slug}`}>
+<a class="focus-ring group editorial-panel block border-x-0 border-b-0 p-5 transition hover:border-[var(--ink)] sm:p-6" href={`${hrefPrefix}/${round.slug}`}>
   <div class="flex items-start justify-between gap-4">
     <div>
-      <p class="text-xs font-semibold uppercase tracking-[.14em] text-[var(--gold)]">{audienceLabel}</p>
-      <h2 class="mt-2 text-xl font-bold text-[var(--green)] group-hover:underline">{round.title}</h2>
+      <p class="editorial-kicker">{audienceLabel}</p>
+      <h2 class="mt-3 text-2xl font-normal tracking-tight text-[var(--ink)] group-hover:underline">{round.title}</h2>
     </div>
-    <span class={`rounded-full px-3 py-1 text-xs font-semibold ${isOpen ? 'bg-[#e7f1e3] text-[var(--green)]' : 'bg-[#f0eee8] text-[var(--muted)]'}`}>{statusLabel}</span>
+    <span class={`border border-[var(--line)] px-3 py-1 text-[.68rem] font-bold uppercase tracking-[.1em] ${isOpen ? 'border-[var(--ink)] text-[var(--ink)]' : 'text-[var(--muted)]'}`}>{statusLabel}</span>
   </div>
   {round.description && <p class="mt-4 line-clamp-2 text-sm leading-6 text-[var(--muted)]">{round.description}</p>}
-  <p class="mt-5 text-xs text-[var(--muted)]">Cierra {date.format(new Date(round.endsAt * 1000))}</p>
+  <p class="mt-6 text-xs uppercase tracking-[.08em] text-[var(--muted)]">Cierra {date.format(new Date(round.endsAt * 1000))}</p>
 </a>

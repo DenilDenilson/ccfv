@@ -2,24 +2,96 @@
 
 :root {
   color-scheme: light;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --ink: #17211b;
-  --muted: #657168;
-  --cream: #f7f5ee;
-  --paper: #fffdf8;
-  --green: #285943;
-  --gold: #d69d41;
-  --line: #e5e2d8;
+  font-family: "Chivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --ink: #242321;
+  --muted: #71706e;
+  --cream: #fcfbf8;
+  --paper: #fcfbf8;
+  --green: #242321;
+  --gold: #71706e;
+  --line: #cfcfcf;
+  --wash: #f2f0eb;
 }
 
 html { background: var(--cream); }
-body { margin: 0; color: var(--ink); background: var(--cream); }
+body { margin: 0; color: var(--ink); background: var(--cream); font-size: 1.125rem; line-height: 1.6; }
 a { color: inherit; }
-button, input, textarea { font: inherit; }
+button, input, textarea, select { font: inherit; }
+button, input, textarea, select { border-radius: 0; }
+h1, h2, h3, h4, h5, h6 { font-weight: 400; line-height: 1.1; }
+h1.font-black, h2.font-bold, h3.font-bold { font-weight: 400 !important; }
+
+::selection { background: var(--ink); color: var(--cream); }
 
 .paper-grid {
-  background-image: linear-gradient(rgba(40, 89, 67, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(40, 89, 67, .035) 1px, transparent 1px);
-  background-size: 28px 28px;
+  background: var(--cream);
 }
 
-.focus-ring:focus-visible { outline: 3px solid #d69d41; outline-offset: 3px; }
+.focus-ring:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+
+/* The reference site uses the Archeo theme: warm paper, charcoal ink,
+   thin rules, uppercase navigation and generous magazine-like spacing. */
+.editorial-header {
+  border-bottom: 1px solid var(--ink);
+  background: var(--cream);
+}
+
+.editorial-container {
+  width: min(1260px, calc(100% - 2 * clamp(20px, 4vw, 90px)));
+  margin-inline: auto;
+}
+
+.editorial-kicker {
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.editorial-display {
+  max-width: 14ch;
+  color: var(--ink);
+  font-size: clamp(3rem, 8vw, 4.5rem);
+  font-weight: 100;
+  letter-spacing: -.045em;
+  line-height: 1.02;
+}
+
+.editorial-rule { border-top: 1px solid var(--line); }
+
+.editorial-panel {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  box-shadow: none;
+}
+
+.editorial-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--cream);
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: .8rem 1.15rem;
+  text-transform: uppercase;
+  transition: background-color .2s ease, color .2s ease;
+}
+
+.editorial-action:hover { background: transparent; color: var(--ink); }
+
+.editorial-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .25em;
+}
+
+.editorial-link:hover { color: var(--muted); }
+
+/* Normalize the existing Tailwind utility vocabulary to the square,
+   print-like language of the reference theme. */
+.rounded-full, .rounded-3xl, .rounded-2xl, .rounded-xl, .rounded-lg { border-radius: 0 !important; }
+.shadow-sm, .shadow-md, .shadow-lg { box-shadow: none !important; }

@@ -9,20 +9,20 @@ const status = Astro.url.searchParams.get('status');
 const csrf = await issueCsrfToken('member-login');
 ---
 <BaseLayout title="Ingresar como miembro · CCFV">
-  <section class="mx-auto flex max-w-xl justify-center px-5 py-16 lg:py-24">
-    <div class="w-full rounded-3xl border border-[var(--line)] bg-[var(--paper)] p-7 shadow-sm sm:p-10">
-      <p class="text-sm font-semibold uppercase tracking-[.16em] text-[var(--gold)]">Acceso de miembros</p>
-      <h1 class="mt-4 text-3xl font-black text-[var(--green)]">Entra con tu código CCFV</h1>
+  <section class="editorial-container flex max-w-2xl justify-center py-20 lg:py-32">
+    <div class="editorial-panel w-full border-x-0 border-b-0 p-7 sm:p-10">
+      <p class="editorial-kicker">Acceso de miembros</p>
+      <h1 class="mt-5 text-4xl font-normal tracking-tight text-[var(--ink)]">Entra con tu código CCFV</h1>
       <p class="mt-4 text-sm leading-6 text-[var(--muted)]">Tu código es personal. La sesión queda guardada en este dispositivo para que no tengas que escribirlo en cada visita.</p>
       {status === 'invalid' && <p class="mt-5 rounded-xl bg-[#fff0ee] px-4 py-3 text-sm text-[#923d34]">El código no es válido o está desactivado. Revisa que lo hayas copiado completo.</p>}
       {status === 'expired' && <p class="mt-5 rounded-xl bg-[#fff8e8] px-4 py-3 text-sm text-[#805d1c]">Tu sesión terminó. Ingresa el código otra vez para continuar.</p>}
       <form class="mt-8 space-y-5" method="post" action="/api/members/login">
         <input type="hidden" name="csrf" value={csrf} />
         <label class="block text-sm font-semibold text-[var(--ink)]" for="code">Código personal</label>
-        <input class="focus-ring w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-lg uppercase tracking-[.14em]" id="code" name="code" autocomplete="one-time-code" placeholder="CCFV-XXXXX-XXXXX-XXXXX-XXXXX-XXXXXX" required maxlength="42" />
-        <button class="focus-ring w-full rounded-xl bg-[var(--green)] px-5 py-3.5 font-semibold text-white transition hover:bg-[#1e4633]" type="submit">Ingresar</button>
+        <input class="focus-ring w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3 text-lg uppercase tracking-[.14em]" id="code" name="code" autocomplete="one-time-code" placeholder="CCFV-XXXXX-XXXXX-XXXXX-XXXXX-XXXXXX" required maxlength="42" />
+        <button class="focus-ring editorial-action w-full" type="submit">Ingresar</button>
       </form>
-      <a class="focus-ring mt-6 inline-block rounded-lg text-sm text-[var(--muted)] underline underline-offset-4" href="/">Volver al inicio</a>
+      <a class="focus-ring editorial-link mt-7 inline-block text-sm text-[var(--muted)]" href="/">Volver al inicio</a>
     </div>
   </section>
 </BaseLayout>
