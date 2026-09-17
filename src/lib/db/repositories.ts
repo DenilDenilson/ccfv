@@ -16,8 +16,8 @@ interface RoundRow {
 
 interface CandidateRow {
   id: string;
-  tmdb_id: number;
-  imdb_id: string;
+  tmdb_id: number | null;
+  imdb_id: string | null;
   title: string;
   original_title: string;
   release_year: number | null;
@@ -89,7 +89,9 @@ export async function listMemberRounds(): Promise<RoundSummary[]> {
   const result = await sqlDb().prepare(`
     SELECT id, slug, title, description, status, audience, starts_at, ends_at, results_published_at
     FROM voting_rounds
-    WHERE status IN ('published', 'closed')
+    -- Members need to see draft rounds so they can submit proposals before
+    -- the administrator opens voting. Cancelled rounds remain hidden.
+    WHERE status IN ('draft', 'published', 'closed')
     ORDER BY starts_at DESC
     LIMIT 20
   `).all<RoundRow>();
@@ -235,6 +237,55 @@ export async function findMovieByExternalId(imdbId: string): Promise<MovieRecord
   return row ? mapCandidate({ ...row, position: 0 }) : null;
 }
 
+function manualMovieKey(title: string, releaseYear: number | null): string {
+  const normalized = title
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 160);
+  return `manual:${normalized}:${releaseYear ?? ''}`;
+}
+
+export interface ManualMovieInput {
+  title: string;
+  originalTitle?: string | null;
+  releaseYear?: number | null;
+  posterUrl?: string | null;
+  overview?: string | null;
+  runtimeMinutes?: number | null;
+  directors?: string[];
+}
+
+export async function saveManualMovie(movie: ManualMovieInput): Promise<MovieRecord> {
+  const title = movie.title.trim().slice(0, 200);
+  const originalTitle = (movie.originalTitle?.trim() || title).slice(0, 200);
+  const releaseYear = movie.releaseYear ?? null;
+  const key = manualMovieKey(title, releaseYear);
+  const existing = await sqlDb().prepare('SELECT id FROM movies WHERE manual_key = ? LIMIT 1').bind(key).first<{ id: string }>();
+  const id = existing?.id ?? randomId();
+  const posterPath = movie.posterUrl?.trim() || null;
+  const overview = movie.overview?.trim().slice(0, 4000) || null;
+  const runtimeMinutes = movie.runtimeMinutes ?? null;
+  const directors = (movie.directors ?? []).map((director) => director.trim()).filter(Boolean).slice(0, 10);
+  await sqlDb().prepare(`
+    INSERT INTO movies (id, tmdb_id, imdb_id, manual_key, title, original_title, release_year, poster_path, overview, runtime_minutes, directors_json, metadata_language, metadata_fetched_at, updated_at)
+    VALUES (?, NULL, NULL, ?, ?, ?, ?, ?, ?, ?, ?, 'es-PE', unixepoch(), unixepoch())
+    ON CONFLICT(id) DO UPDATE SET manual_key = excluded.manual_key, title = excluded.title,
+      original_title = excluded.original_title, release_year = excluded.release_year,
+      poster_path = excluded.poster_path, overview = excluded.overview,
+      runtime_minutes = excluded.runtime_minutes, directors_json = excluded.directors_json,
+      metadata_fetched_at = unixepoch(), updated_at = unixepoch()
+  `).bind(id, key, title, originalTitle, releaseYear, posterPath, overview, runtimeMinutes, JSON.stringify(directors)).run();
+  const row = await sqlDb().prepare(`
+    SELECT id, tmdb_id, imdb_id, title, original_title, release_year, poster_path, overview, runtime_minutes, directors_json
+    FROM movies WHERE id = ? LIMIT 1
+  `).bind(id).first<CandidateRow>();
+  if (!row) throw new Error('Manual movie was not persisted');
+  return mapCandidate({ ...row, position: 0 });
+}
+
 export async function saveMovie(movie: {
   tmdbId: number; imdbId: string; title: string; originalTitle: string; releaseDate: string | null;
   releaseYear: number | null; posterPath: string | null; overview: string | null; runtimeMinutes: number | null; directors: string[];
@@ -259,23 +310,23 @@ export async function countMemberProposalsSince(memberId: string, since: number)
   return Number(row?.count ?? 0);
 }
 
-export async function createProposal(memberId: string, movieId: string, justification: string | null): Promise<{ id: string; duplicate: boolean }> {
+export async function createProposal(roundId: string, memberId: string, movieId: string, justification: string | null): Promise<{ id: string; duplicate: boolean }> {
   const id = randomId();
   try {
-    await sqlDb().prepare('INSERT INTO proposals (id, movie_id, member_id, justification, status) VALUES (?, ?, ?, ?, \'pending\')').bind(id, movieId, memberId, justification).run();
+    await sqlDb().prepare('INSERT INTO proposals (id, round_id, movie_id, member_id, justification, status) VALUES (?, ?, ?, ?, ?, \'pending\')').bind(id, roundId, movieId, memberId, justification).run();
     return { id, duplicate: false };
   } catch (error) {
-    const existing = await sqlDb().prepare('SELECT id FROM proposals WHERE movie_id = ? LIMIT 1').bind(movieId).first<{ id: string }>();
+    const existing = await sqlDb().prepare('SELECT id FROM proposals WHERE round_id = ? AND movie_id = ? LIMIT 1').bind(roundId, movieId).first<{ id: string }>();
     if (existing) return { id: existing.id, duplicate: true };
     throw error;
   }
 }
 
-export async function listMemberProposals(memberId: string): Promise<Array<{ id: string; title: string; status: string; justification: string | null; createdAt: number }>> {
+export async function listMemberProposals(memberId: string): Promise<Array<{ id: string; title: string; roundTitle: string | null; status: string; justification: string | null; createdAt: number }>> {
   const result = await sqlDb().prepare(`
-    SELECT p.id, m.title, p.status, p.justification, p.created_at
-    FROM proposals p JOIN movies m ON m.id = p.movie_id
+    SELECT p.id, m.title, r.title AS round_title, p.status, p.justification, p.created_at
+    FROM proposals p JOIN movies m ON m.id = p.movie_id LEFT JOIN voting_rounds r ON r.id = p.round_id
     WHERE p.member_id = ? ORDER BY p.created_at DESC LIMIT 50
-  `).bind(memberId).all<{ id: string; title: string; status: string; justification: string | null; created_at: number }>();
-  return (result.results ?? []).map((row: { id: string; title: string; status: string; justification: string | null; created_at: number }) => ({ id: row.id, title: row.title, status: row.status, justification: row.justification, createdAt: row.created_at }));
+  `).bind(memberId).all<{ id: string; title: string; round_title: string | null; status: string; justification: string | null; created_at: number }>();
+  return (result.results ?? []).map((row) => ({ id: row.id, title: row.title, roundTitle: row.round_title, status: row.status, justification: row.justification, createdAt: row.created_at }));
 }

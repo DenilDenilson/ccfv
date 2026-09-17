@@ -15,8 +15,8 @@ export interface RoundSummary {
 
 export interface MovieSummary {
   id: string;
-  tmdbId: number;
-  imdbId: string;
+  tmdbId: number | null;
+  imdbId: string | null;
   title: string;
   originalTitle: string;
   releaseYear: number | null;

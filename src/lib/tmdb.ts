@@ -91,6 +91,10 @@ export async function fetchMoviePreview(imdbId: string): Promise<MoviePreview | 
 }
 
 export function posterUrl(path: string | null, size = 'w500'): string | null {
-  if (!path || !/^\/[A-Za-z0-9._/-]+$/.test(path)) return null;
+  if (!path) return null;
+  // Manual proposals may provide a hosted HTTPS poster URL. TMDB paths are
+  // still validated strictly before being expanded to the image CDN.
+  if (/^https:\/\/[^\s]+$/i.test(path)) return path;
+  if (!/^\/[A-Za-z0-9._/-]+$/.test(path)) return null;
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }

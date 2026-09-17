@@ -74,8 +74,10 @@ export const movies = sqliteTable(
   'movies',
   {
     id: text('id').primaryKey(),
-    tmdbId: integer('tmdb_id').notNull(),
-    imdbId: text('imdb_id').notNull(),
+    // Regional films can be entered without either external identifier.
+    tmdbId: integer('tmdb_id'),
+    imdbId: text('imdb_id'),
+    manualKey: text('manual_key'),
     title: text('title').notNull(),
     originalTitle: text('original_title').notNull(),
     releaseDate: text('release_date'),
@@ -92,6 +94,7 @@ export const movies = sqliteTable(
   (table) => [
     uniqueIndex('movies_tmdb_id_uq').on(table.tmdbId),
     uniqueIndex('movies_imdb_id_uq').on(table.imdbId),
+    uniqueIndex('movies_manual_key_uq').on(table.manualKey),
     check('movies_runtime_ck', sql`${table.runtimeMinutes} is null or ${table.runtimeMinutes} > 0`),
   ],
 );
@@ -100,6 +103,8 @@ export const proposals = sqliteTable(
   'proposals',
   {
     id: text('id').primaryKey(),
+    // Nullable only for legacy proposals created before proposals were tied to a round.
+    roundId: text('round_id'),
     movieId: text('movie_id').notNull(),
     memberId: text('member_id').notNull(),
     justification: text('justification'),
@@ -111,7 +116,8 @@ export const proposals = sqliteTable(
     updatedAt: integer('updated_at').notNull().default(now()),
   },
   (table) => [
-    uniqueIndex('proposals_movie_id_uq').on(table.movieId),
+    uniqueIndex('proposals_round_movie_uq').on(table.roundId, table.movieId),
+    index('proposals_round_status_idx').on(table.roundId, table.status, table.createdAt),
     index('proposals_status_created_idx').on(table.status, table.createdAt),
     index('proposals_member_created_idx').on(table.memberId, table.createdAt),
     foreignKey({ columns: [table.movieId], foreignColumns: [movies.id] }),
