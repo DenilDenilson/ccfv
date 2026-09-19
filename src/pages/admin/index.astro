@@ -102,7 +102,7 @@ const formatDateTimeLocal = (timestamp: number) => new Date((timestamp - 5 * 60 
         if (result) { result.textContent = `${data.message || 'Código generado'} ${data.code}`; result.classList.remove('hidden'); }
         if (form.getAttribute('action')?.endsWith('/create')) form.reset();
       } catch (error) {
-        if (result) { result.textContent = error instanceof Error ? error.message : 'No se pudo completar la operación.'; result.classList.remove('hidden'); }
+        if (result) { result.textContent = error instanceof TypeError ? 'La sesión de Cloudflare Access expiró o fue bloqueada. Recarga la página e inicia sesión nuevamente.' : error instanceof Error ? error.message : 'No se pudo completar la operación.'; result.classList.remove('hidden'); }
       }
     });
   });

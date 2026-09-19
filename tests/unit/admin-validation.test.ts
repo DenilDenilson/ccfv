@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isProposalStatus, parseAdminDateTime, parseAdminPoster } from '@/lib/admin/validation';
+import { normalizeDisplayName } from '@/lib/auth/member';
 
 describe('admin input validation', () => {
   it('interprets Lima datetime-local values consistently', () => {
@@ -19,5 +20,10 @@ describe('admin input validation', () => {
     expect(isProposalStatus('approved')).toBe(true);
     expect(isProposalStatus('rejected')).toBe(true);
     expect(isProposalStatus('deleted')).toBe(false);
+  });
+
+  it('preserves accented names and normalizes repeated spaces', () => {
+    expect(normalizeDisplayName('  Ana   Lucía  ')).toBe('Ana Lucía');
+    expect(normalizeDisplayName('José')).toBe('José');
   });
 });

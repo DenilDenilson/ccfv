@@ -20,6 +20,10 @@ export interface IssuedMemberCode {
   code: string;
 }
 
+export function normalizeDisplayName(displayName: string): string {
+  return displayName.normalize('NFC').replace(/\s+/gu, ' ').trim().slice(0, 120);
+}
+
 function normalizeCode(code: string): string {
   return code.trim().toUpperCase().replaceAll('-', '').replaceAll(' ', '');
 }
@@ -95,7 +99,7 @@ export async function createMember(displayName: string): Promise<IssuedMemberCod
     const code = await generateMemberCode();
     const codeHash = await hashMemberCode(code);
     try {
-      await sqlDb().prepare('INSERT INTO members (id, display_name, status, code_hash, code_key_version, auth_version, code_rotated_at) VALUES (?, ?, \'active\', ?, 1, 1, unixepoch())').bind(memberId, displayName.trim(), codeHash).run();
+      await sqlDb().prepare('INSERT INTO members (id, display_name, status, code_hash, code_key_version, auth_version, code_rotated_at) VALUES (?, ?, \'active\', ?, 1, 1, unixepoch())').bind(memberId, normalizeDisplayName(displayName), codeHash).run();
       return { memberId, code };
     } catch (error) {
       if (attempt === 4) throw error;
