@@ -1,17 +1,32 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { accessLogoutUrl } from '@/lib/auth/admin';
 import { runtimeEnv } from '@/lib/env';
 
-if (runtimeEnv().APP_ENV !== 'local') return new Response('Admin access is protected by Cloudflare Access.', { status: 403 });
+const isLocal = runtimeEnv().APP_ENV === 'local';
+const status = Astro.url.searchParams.get('status');
+const accessLogout = accessLogoutUrl('/admin');
 ---
 <BaseLayout title="Acceso local · CCFV">
   <section class="editorial-container max-w-2xl py-20 lg:py-32">
-    <p class="editorial-kicker">Entorno local</p>
-    <h1 class="mt-5 text-4xl font-normal tracking-tight text-[var(--ink)] sm:text-5xl">Acceso administrativo</h1>
-    <p class="mt-4 text-sm leading-6 text-[var(--muted)]">Introduce el secreto local definido en <code>.dev.vars</code>. Este acceso solo funciona con <code>APP_ENV=local</code>.</p>
-    <form class="editorial-panel mt-10 border-x-0 border-b-0 p-5" method="post" action="/api/admin/local-login">
-      <label class="text-sm font-semibold text-[var(--ink)]">Secreto local<input required type="password" name="secret" autocomplete="current-password" class="mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3" /></label>
-      <button class="mt-6 editorial-action w-full" type="submit">Entrar al panel</button>
-    </form>
+    {isLocal ? <>
+      <p class="editorial-kicker">Entorno local</p>
+      <h1 class="mt-5 text-4xl font-normal tracking-tight text-[var(--ink)] sm:text-5xl">Acceso administrativo</h1>
+      <p class="mt-4 text-sm leading-6 text-[var(--muted)]">Introduce el secreto local definido en <code>.dev.vars</code>. Este acceso solo funciona con <code>APP_ENV=local</code>.</p>
+      {status === 'logged-out' && <p class="mt-4 rounded-lg bg-[#fff8e8] p-3 text-sm text-[#805d1c]" role="status">Sesión cerrada correctamente.</p>}
+      <form class="editorial-panel mt-10 border-x-0 border-b-0 p-5" method="post" action="/api/admin/local-login">
+        <label class="text-sm font-semibold text-[var(--ink)]">Secreto local<input required type="password" name="secret" autocomplete="current-password" class="mt-2 w-full border-x-0 border-b border-t border-[var(--line)] bg-transparent px-0 py-3" /></label>
+        <button class="mt-6 editorial-action w-full" type="submit">Entrar al panel</button>
+      </form>
+    </> : <>
+      <p class="editorial-kicker">Cloudflare Access</p>
+      <h1 class="mt-5 text-4xl font-normal tracking-tight text-[var(--ink)] sm:text-5xl">Vuelve a autenticarte</h1>
+      <p class="mt-4 text-sm leading-6 text-[var(--muted)]">La sesión administrativa expiró, fue cerrada o no tiene permisos para este panel. Usa Cloudflare Access para volver a entrar.</p>
+      {status === 'expired' && <p class="mt-4 rounded-lg bg-[#fff8e8] p-3 text-sm text-[#805d1c]" role="status">Tu sesión ya no es válida. Inicia sesión nuevamente.</p>}
+      <div class="mt-10 flex flex-col gap-3 sm:flex-row">
+        <a class="editorial-action text-center" href="/admin">Intentar de nuevo</a>
+        <a class="focus-ring editorial-link border border-[var(--line)] px-5 py-3 text-center text-sm font-semibold" href={accessLogout}>Cerrar sesión de Access</a>
+      </div>
+    </>}
   </section>
 </BaseLayout>

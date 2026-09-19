@@ -1,6 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { sqlDb } from '@/lib/db/client';
-import { runtimeEnv } from '@/lib/env';
+import { appOrigin, runtimeEnv } from '@/lib/env';
 import { hmacSha256, randomId, verifyHmac } from '@/lib/security/crypto';
 import { createMember, revokeMemberSessions, rotateMemberCode } from '@/lib/auth/member';
 import { readCookie, serializeCookie, serializeDeleteCookie } from '@/lib/security/cookies';
@@ -145,6 +145,20 @@ export async function issueLocalAdminCookie(secret: string): Promise<string | nu
 
 export function clearLocalAdminCookie(): string {
   return serializeDeleteCookie(LOCAL_ADMIN_COOKIE);
+}
+
+/**
+ * Builds the Cloudflare Access logout URL without trusting a user-provided
+ * redirect. The destination is always the configured application origin.
+ */
+export function accessLogoutUrl(returnPath = '/admin'): string {
+  const environment = runtimeEnv();
+  const origin = appOrigin().replace(/\/$/, '');
+  const safePath = returnPath.startsWith('/') && !returnPath.startsWith('//') ? returnPath : '/admin';
+  const returnTo = new URL(safePath, `${origin}/`).toString();
+  const issuer = environment.CF_ACCESS_ISSUER?.replace(/\/$/, '');
+  if (!issuer) return `${origin}/admin/login?status=logged-out`;
+  return `${issuer}/cdn-cgi/access/logout?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
 export async function currentAdmin(request: Request): Promise<AdminIdentity | null> {

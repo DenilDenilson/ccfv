@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { isProposalStatus, parseAdminDateTime, parseAdminPoster } from '@/lib/admin/validation';
+import { accessLogoutUrl } from '@/lib/auth/admin';
 import { normalizeDisplayName } from '@/lib/auth/member';
+import { env } from 'cloudflare:workers';
 
 describe('admin input validation', () => {
   it('interprets Lima datetime-local values consistently', () => {
@@ -25,5 +27,14 @@ describe('admin input validation', () => {
   it('preserves accented names and normalizes repeated spaces', () => {
     expect(normalizeDisplayName('  Ana   Lucía  ')).toBe('Ana Lucía');
     expect(normalizeDisplayName('José')).toBe('José');
+  });
+
+  it('builds a fixed-origin Cloudflare Access logout URL', () => {
+    const testEnv = env as unknown as { CF_ACCESS_ISSUER?: string };
+    const previousIssuer = testEnv.CF_ACCESS_ISSUER;
+    testEnv.CF_ACCESS_ISSUER = 'https://denildenilson.cloudflareaccess.com/';
+    expect(accessLogoutUrl('/admin')).toBe('https://denildenilson.cloudflareaccess.com/cdn-cgi/access/logout?returnTo=http%3A%2F%2Flocalhost%3A4321%2Fadmin');
+    expect(accessLogoutUrl('https://evil.example/')).toContain('returnTo=http%3A%2F%2Flocalhost%3A4321%2Fadmin');
+    testEnv.CF_ACCESS_ISSUER = previousIssuer;
   });
 });
