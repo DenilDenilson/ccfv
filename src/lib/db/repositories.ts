@@ -335,11 +335,11 @@ export async function createProposal(roundId: string, memberId: string, movieId:
   }
 }
 
-export async function listMemberProposals(memberId: string): Promise<Array<{ id: string; title: string; roundTitle: string | null; status: string; justification: string | null; createdAt: number }>> {
+export async function listMemberProposals(memberId: string): Promise<Array<{ id: string; title: string; posterPath: string | null; roundTitle: string | null; status: string; justification: string | null; createdAt: number }>> {
   const result = await sqlDb().prepare(`
-    SELECT p.id, m.title, r.title AS round_title, p.status, p.justification, p.created_at
+    SELECT p.id, m.title, m.poster_path, r.title AS round_title, p.status, p.justification, p.created_at
     FROM proposals p JOIN movies m ON m.id = p.movie_id LEFT JOIN voting_rounds r ON r.id = p.round_id
     WHERE p.member_id = ? ORDER BY p.created_at DESC LIMIT 50
-  `).bind(memberId).all<{ id: string; title: string; round_title: string | null; status: string; justification: string | null; created_at: number }>();
-  return (result.results ?? []).map((row) => ({ id: row.id, title: row.title, roundTitle: row.round_title, status: row.status, justification: row.justification, createdAt: row.created_at }));
+  `).bind(memberId).all<{ id: string; title: string; poster_path: string | null; round_title: string | null; status: string; justification: string | null; created_at: number }>();
+  return (result.results ?? []).map((row) => ({ id: row.id, title: row.title, posterPath: row.poster_path, roundTitle: row.round_title, status: row.status, justification: row.justification, createdAt: row.created_at }));
 }

@@ -73,12 +73,14 @@ export interface AdminCandidate {
   movie_id: string;
   title: string;
   release_year: number | null;
+  poster_path: string | null;
   selected_at: number | null;
 }
 
 export interface AdminRoundResult {
   movie_id: string;
   title: string;
+  poster_path: string | null;
   member_count: number;
   public_counted_count: number;
   public_abuse_excluded_count: number;
@@ -90,6 +92,7 @@ export interface AdminScreening {
   movie_id: string;
   round_id: string | null;
   movie_title: string;
+  poster_path: string | null;
   status: string;
   scheduled_at: number;
   screened_at: number | null;
@@ -282,7 +285,7 @@ export async function updateProposal(adminId: string, proposalId: string, input:
 
 export async function listRoundResults(roundId: string): Promise<AdminRoundResult[]> {
   const result = await sqlDb().prepare(`
-    SELECT rmr.movie_id, m.title, rmr.member_count, rmr.public_counted_count, rmr.public_abuse_excluded_count, rmr.public_converted_count
+    SELECT rmr.movie_id, m.title, m.poster_path, rmr.member_count, rmr.public_counted_count, rmr.public_abuse_excluded_count, rmr.public_converted_count
     FROM round_movie_results rmr JOIN movies m ON m.id = rmr.movie_id
     WHERE rmr.round_id = ? ORDER BY rmr.member_count DESC, rmr.public_counted_count DESC, m.title ASC
   `).bind(roundId).all<AdminRoundResult>();
@@ -291,7 +294,7 @@ export async function listRoundResults(roundId: string): Promise<AdminRoundResul
 
 export async function listRoundCandidates(roundId: string): Promise<AdminCandidate[]> {
   const result = await sqlDb().prepare(`
-    SELECT rm.movie_id, m.title, m.release_year, rm.selected_at
+    SELECT rm.movie_id, m.title, m.release_year, m.poster_path, rm.selected_at
     FROM round_movies rm JOIN movies m ON m.id = rm.movie_id
     WHERE rm.round_id = ? ORDER BY rm.position ASC
   `).bind(roundId).all<AdminCandidate>();
@@ -403,7 +406,7 @@ export async function scheduleSelectedMovie(roundId: string, movieId: string, ad
 
 export async function listAdminScreenings(): Promise<AdminScreening[]> {
   const result = await sqlDb().prepare(`
-    SELECT s.id, s.movie_id, s.source_round_id AS round_id, m.title AS movie_title, s.status, s.scheduled_at, s.screened_at, s.venue
+    SELECT s.id, s.movie_id, s.source_round_id AS round_id, m.title AS movie_title, m.poster_path, s.status, s.scheduled_at, s.screened_at, s.venue
     FROM screenings s JOIN movies m ON m.id = s.movie_id
     ORDER BY s.scheduled_at DESC LIMIT 50
   `).all<AdminScreening>();

@@ -12,7 +12,7 @@ interface Props {
 const { movie, selected = false, count, disabled = false } = Astro.props;
 const poster = posterUrl(movie.posterPath);
 ---
-<article aria-disabled={disabled} aria-label={selected ? `${movie.title}, elección seleccionada` : movie.title} class={`group editorial-panel overflow-hidden border-x-0 border-b-0 transition ${disabled ? 'opacity-60' : ''} ${selected ? 'border-[var(--orange)] bg-[var(--cream)]' : 'hover:border-[var(--ink)]'}`}>
+<article aria-disabled={disabled} aria-label={selected ? `${movie.title}, elección seleccionada` : movie.title} class={`group editorial-panel overflow-hidden border-x-0 border-b-0 transition ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:-translate-y-0.5 hover:border-[var(--ink)] hover:shadow-[0_10px_24px_rgba(18,18,18,.12)]'} ${selected ? 'border-[var(--orange)] bg-[var(--cream)] shadow-[0_0_0_3px_var(--orange)]' : ''}`}>
   <div class="grid grid-cols-[88px_1fr] gap-5 p-4 sm:grid-cols-[132px_1fr] sm:gap-6 sm:p-6">
     <div class="aspect-[2/3] overflow-hidden bg-[var(--wash)]">
       {poster ? <img class="h-full w-full object-cover" src={poster} alt={`Póster de ${movie.title}`} loading="lazy" /> : <div class="grid h-full place-items-center p-3 text-center text-xs text-[var(--muted)]">Póster no disponible</div>}

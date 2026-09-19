@@ -1,0 +1,15 @@
+---
+import { posterUrl } from '@/lib/tmdb';
+
+interface Props {
+  path?: string | null;
+  alt: string;
+  class?: string;
+}
+
+const { path = null, alt, class: className = 'h-24 w-16' } = Astro.props;
+const poster = posterUrl(path, 'w185');
+---
+<div class={`shrink-0 overflow-hidden bg-[var(--wash)] ${className}`}>
+  {poster ? <img class="h-full w-full object-cover" src={poster} alt={alt} loading="lazy" /> : <div class="grid h-full place-items-center p-2 text-center text-[.65rem] leading-tight text-[var(--muted)]">Póster no disponible</div>}
+</div>
